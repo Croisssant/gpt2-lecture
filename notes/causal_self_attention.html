@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inside CausalSelfAttention</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+/* Layout: one reading column; a wide "stage" that scrolls sideways on its own; explanation + code side by side under it. */
+:root {
+  --bg: #f4f6f9;
+  --surface: #ffffff;
+  --fg: #1a1f29;
+  --muted: #5b6475;
+  --line: #d8dde6;
+  --accent: #2b55c9;
+  --masked: #e9ecf1;
+  --h0: #0e9486;
+  --h1: #d9821a;
+  --h2: #c23d78;
+  --neutral: #7c8597;
+  --f-display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --cc: 15px;   /* colour-only cell */
+  --cn: 38px;   /* numeric cell */
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1218; --surface: #181c24; --fg: #e5e9f0; --muted: #9aa3b4; --line: #2b313c;
+    --accent: #7c9cff; --masked: #222731; --h0: #2cc2b1; --h1: #f0a43f; --h2: #e46aa2; --neutral: #8a93a6;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1218; --surface: #181c24; --fg: #e5e9f0; --muted: #9aa3b4; --line: #2b313c;
+  --accent: #7c9cff; --masked: #222731; --h0: #2cc2b1; --h1: #f0a43f; --h2: #e46aa2; --neutral: #8a93a6;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--f-body); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 1060px; margin: 0 auto; padding-inline: 20px; padding-block: 36px 64px; display: grid; gap: 40px; }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: clamp(30px, 5vw, 44px); font-weight: 700; letter-spacing: -0.01em; }
+h2 { font-size: 24px; font-weight: 600; }
+h3 { font-size: 18px; font-weight: 600; }
+p { margin: 0; max-width: 68ch; }
+code, .mono { font-family: var(--f-mono); font-size: 0.9em; }
+.eyebrow { font-family: var(--f-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+header { display: grid; gap: 12px; }
+header p { color: var(--muted); font-size: 16px; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 13px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
+
+/* hs section */
+.hs { display: grid; gap: 18px; }
+.hs-answer { font-size: 17px; max-width: 70ch; }
+.hs-answer b { font-weight: 600; }
+.bar-wrap { overflow-x: auto; padding-bottom: 4px; }
+.bar { display: flex; min-width: 640px; height: 46px; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; background: var(--surface); }
+.seg { flex: 1; display: grid; place-items: center; font-family: var(--f-mono); font-size: 11px; border-right: 1px solid var(--surface); line-height: 1.15; text-align: center; }
+.seg:last-child { border-right: 0; }
+.bar-axis { display: flex; justify-content: space-between; min-width: 640px; font-family: var(--f-mono); font-size: 11px; color: var(--muted); margin-top: 4px; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
+.fact { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; display: grid; gap: 6px; min-width: 0; }
+.fact .k { font-family: var(--f-mono); font-size: 15px; font-weight: 600; }
+.fact p { font-size: 14px; color: var(--muted); }
+
+/* walkthrough */
+.walk { display: grid; gap: 18px; }
+.walk-head { display: grid; gap: 8px; }
+.steps { display: flex; flex-wrap: wrap; gap: 6px; }
+.steps button { font-family: var(--f-mono); font-size: 12px; padding: 6px 10px; border-radius: 4px; border: 1px solid var(--line); background: var(--surface); color: var(--muted); cursor: pointer; }
+.steps button[aria-current="step"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.steps button:hover { border-color: var(--fg); color: var(--fg); }
+.steps button[aria-current="step"]:hover { color: var(--bg); }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; display: grid; }
+.panel-top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 16px; padding: 16px 18px; border-bottom: 1px solid var(--line); }
+.shape { font-family: var(--f-mono); font-size: 12.5px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.shape b { color: var(--fg); font-weight: 600; }
+.stage { overflow-x: auto; padding: 22px 18px; min-height: 230px; }
+.stage-inner { display: flex; flex-wrap: wrap; gap: 22px 28px; align-items: flex-start; width: max-content; max-width: 100%; }
+.stage-inner.nowrap { flex-wrap: nowrap; max-width: none; }
+.col { display: flex; flex-direction: column; gap: 14px; }
+.row { display: flex; align-items: center; gap: 10px; }
+.op { font-family: var(--f-mono); font-size: 20px; color: var(--muted); padding-top: 18px; }
+.headblock { border: 1px dashed var(--line); border-radius: 6px; padding: 10px 12px; display: grid; gap: 6px; }
+.headblock > .hb-title { font-family: var(--f-mono); font-size: 12px; font-weight: 600; }
+
+figure.m { margin: 0; display: grid; gap: 6px; justify-items: start; }
+figure.m figcaption { font-family: var(--f-mono); font-size: 12px; color: var(--muted); }
+figure.m figcaption b { color: var(--fg); font-weight: 600; }
+.g { display: grid; gap: 2px; }
+.g .c { height: var(--cc); border-radius: 2px; }
+.g.num .c { height: 26px; font-family: var(--f-mono); font-size: 11px; display: grid; place-items: center; color: var(--fg); font-variant-numeric: tabular-nums; }
+.g .c[data-link] { cursor: crosshair; }
+.g .c.masked { background: var(--masked) !important; color: var(--muted); }
+.g .gap { margin-left: 5px; }
+.g .gap2 { margin-left: 14px; }
+.g .rl, .g .cl, .g .gl { font-family: var(--f-mono); font-size: 10.5px; color: var(--muted); display: grid; place-items: center; white-space: nowrap; }
+.g .rl { padding-right: 6px; justify-items: end; }
+.g .gl { font-weight: 600; font-size: 11px; }
+.c.hl { outline: 2px solid var(--fg); outline-offset: 0; position: relative; z-index: 1; }
+.c.hot { outline: 2px solid var(--accent); outline-offset: 0; position: relative; z-index: 2; }
+
+.controls { display: flex; flex-wrap: wrap; gap: 10px 20px; align-items: center; padding: 12px 18px; border-top: 1px solid var(--line); font-size: 13px; }
+.controls[hidden] { display: none !important; }
+.seg-btns { display: inline-flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+.seg-btns button { font-family: var(--f-mono); font-size: 12px; border: 0; background: transparent; color: var(--muted); padding: 5px 10px; cursor: pointer; border-right: 1px solid var(--line); }
+.seg-btns button:last-child { border-right: 0; }
+.seg-btns button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+.toggle { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+.info { font-family: var(--f-mono); font-size: 12.5px; padding: 10px 18px; border-top: 1px solid var(--line); color: var(--muted); min-height: 42px; overflow-wrap: anywhere; }
+.info b { color: var(--fg); }
+
+.tiles { display: grid; gap: 4px; }
+.tile { width: 54px; height: 38px; border-radius: 3px; display: grid; place-items: center; font-family: var(--f-mono); font-size: 10.5px; line-height: 1.1; text-align: center; color: var(--fg); }
+.warn { border-left: 3px solid var(--h2); padding: 6px 12px; font-size: 13.5px; max-width: 60ch; }
+
+.below { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 18px; }
+@media (max-width: 820px) { .below { grid-template-columns: minmax(0, 1fr); } }
+.explain { display: grid; gap: 10px; align-content: start; min-width: 0; }
+.explain p { font-size: 15px; }
+.nav { display: flex; gap: 8px; margin-top: 6px; }
+.nav button { font-family: var(--f-body); font-size: 14px; font-weight: 500; padding: 8px 14px; border-radius: 4px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); cursor: pointer; }
+.nav button:disabled { opacity: 0.4; cursor: default; }
+.nav button.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.hint { font-size: 12.5px; color: var(--muted); }
+pre.code { margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 0; overflow-x: auto; font-family: var(--f-mono); font-size: 12.5px; line-height: 1.6; min-width: 0; }
+pre.code .ln { display: block; padding: 0 14px; white-space: pre; color: var(--muted); }
+pre.code .ln.on { color: var(--fg); background: color-mix(in oklab, var(--accent) 14%, var(--surface)); box-shadow: inset 3px 0 0 var(--accent); }
+pre.code .n { display: inline-block; width: 2.4em; color: var(--muted); opacity: 0.7; user-select: none; }
+
+.compare { display: grid; gap: 12px; }
+.compare table { border-collapse: collapse; width: 100%; font-size: 14px; }
+.compare th, .compare td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.compare th { font-family: var(--f-mono); font-size: 12px; color: var(--muted); font-weight: 500; }
+.compare td.n { font-family: var(--f-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tbl { overflow-x: auto; }
+footer { font-size: 13px; color: var(--muted); }
+@media (prefers-reduced-motion: no-preference) { .stage-inner { animation: fade .25s ease-out; } @keyframes fade { from { opacity: .35; transform: translateY(3px); } to { opacity: 1; transform: none; } } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Let's reproduce GPT-2 · train_gpt2.py</div>
+    <h1>Inside CausalSelfAttention</h1>
+    <p>What <code>hs</code> is, and how one <code>@</code> runs every attention head at the same time. The diagrams use toy sizes small enough to draw: T = 4 tokens, nh = 3 heads, hs = 4, so C = 12. GPT-2 124M uses T = 1024, nh = 12, hs = 64, C = 768.</p>
+    <div class="legend" aria-label="Colour legend">
+      <span><i class="sw" style="background:var(--h0)"></i>head 0</span>
+      <span><i class="sw" style="background:var(--h1)"></i>head 1</span>
+      <span><i class="sw" style="background:var(--h2)"></i>head 2</span>
+      <span><i class="sw" style="background:var(--neutral)"></i>not split into heads yet</span>
+    </div>
+  </header>
+
+  <section class="hs" aria-labelledby="hs-title">
+    <h2 id="hs-title">What is hs?</h2>
+    <p class="hs-answer"><b>hs is the length of one head's q, k or v vector for one token.</b> <code>c_attn</code> gives every token a full query of C = 768 numbers. That vector is cut into nh = 12 consecutive slices of 64 numbers, and head h only ever uses slice h. The same cut is applied to k and v.</p>
+    <div>
+      <div class="bar-wrap">
+        <div class="bar" id="bar768" aria-label="One token's 768-number query vector split into 12 slices of 64"></div>
+        <div class="bar-axis"><span>channel 0</span><span>one token's q · 768 numbers</span><span>767</span></div>
+      </div>
+    </div>
+    <div class="facts">
+      <div class="fact"><div class="k">nh × hs = C</div><p>12 × 64 = 768. More heads means shorter vectors per head; the total width and compute stay the same.</p></div>
+      <div class="fact"><div class="k">score = q·k over hs numbers</div><p>Inside one head, an attention score is the dot product of two 64-number vectors: a query slice and a key slice.</p></div>
+      <div class="fact"><div class="k">÷ √hs = ÷ 8</div><p>That is <code>1/math.sqrt(k.size(-1))</code>. It keeps scores from growing with vector length, so softmax doesn't saturate.</p></div>
+      <div class="fact"><div class="k">No per-head weights</div><p>There's one C × 3C weight. "Heads" are just which output columns you read; <code>view</code> draws the boundaries.</p></div>
+    </div>
+  </section>
+
+  <section class="walk" aria-labelledby="walk-title">
+    <div class="walk-head">
+      <h2 id="walk-title">The forward pass, one line at a time</h2>
+      <p class="hint">Use the step buttons or the ← → keys. From step 5 on, hover or tap a number to see where it comes from.</p>
+      <div class="steps" id="steps" role="tablist" aria-label="Steps"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-top">
+        <h3 id="st-title"></h3>
+        <div class="shape" id="st-shape"></div>
+      </div>
+      <div class="stage" id="stage"></div>
+      <div class="controls" id="ctl-batch" hidden>
+        <span>Batch size B:</span>
+        <span class="seg-btns" id="bsel">
+          <button type="button" data-b="1" aria-pressed="true">1</button>
+          <button type="button" data-b="2" aria-pressed="false">2</button>
+          <button type="button" data-b="4" aria-pressed="false">4</button>
+        </span>
+        <label class="toggle"><input type="checkbox" id="noT"> Skip the transpose (wrong)</label>
+      </div>
+      <div class="info" id="info" hidden></div>
+    </div>
+
+    <div class="below">
+      <div class="explain">
+        <div id="st-text"></div>
+        <div class="nav">
+          <button type="button" id="prev">← Previous</button>
+          <button type="button" id="next" class="primary">Next →</button>
+        </div>
+      </div>
+      <pre class="code" id="code" aria-label="CausalSelfAttention.forward"></pre>
+    </div>
+  </section>
+
+  <section class="compare" aria-labelledby="cmp-title">
+    <h2 id="cmp-title">Why this is faster than a loop over heads</h2>
+    <p>Same math as the nanoGPT lecture's list of <code>Head</code> modules. The difference is how many GPU calls it takes, for one layer of GPT-2 124M.</p>
+    <div class="tbl">
+      <table>
+        <thead><tr><th>Work</th><th>Loop over 12 heads</th><th>This class</th></tr></thead>
+        <tbody>
+          <tr><td>Make q, k, v</td><td class="n">36 matmuls of 768→64</td><td class="n">1 matmul of 768→2304</td></tr>
+          <tr><td>Split into heads</td><td class="n">—</td><td class="n">split / view / transpose: no copy</td></tr>
+          <tr><td>Scores q @ kᵀ</td><td class="n">12 matmuls</td><td class="n">1 batched matmul over (B, nh)</td></tr>
+          <tr><td>Weighted sum att @ v</td><td class="n">12 matmuls</td><td class="n">1 batched matmul over (B, nh)</td></tr>
+          <tr><td>Join heads</td><td class="n">torch.cat (copy)</td><td class="n">contiguous().view (1 copy)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>A single (1024 × 64) matmul uses a small fraction of a GPU's cores, and each launch has fixed overhead. Batching the heads turns many small jobs into a few large ones. In Section 2, <code>F.scaled_dot_product_attention</code> replaces the score, mask, softmax and weighted-sum lines with one fused kernel that never stores the T × T matrix.</p>
+  </section>
+
+  <footer>Numbers in the walkthrough are random example values with the projection bias left out. Shapes and operations match <code>train_gpt2.py</code> lines 28–48.</footer>
+</div>
+
+<script>
+(() => {
+  const T = 4, NH = 3, HS = 4, C = NH * HS;
+  let seed = 11;
+  const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
+  const r1 = () => Math.round((rnd() * 2 - 1) * 10) / 10;
+  const X = Array.from({ length: T }, () => Array.from({ length: C }, r1));
+  const QKV = Array.from({ length: T }, () => Array.from({ length: 3 * C }, r1));
+  const part = off => Array.from({ length: NH }, (_, h) => Array.from({ length: T }, (_, t) => Array.from({ length: HS }, (_, d) => QKV[t][off + h * HS + d])));
+  const Q = part(0), K = part(C), V = part(2 * C);
+  const dot = (a, b) => a.reduce((s, v, i) => s + v * b[i], 0);
+  const SC = 1 / Math.sqrt(HS);
+  const S = Q.map((q, h) => q.map(qi => K[h].map(kj => dot(qi, kj) * SC)));
+  const P = S.map(m => m.map((row, i) => { const e = row.map((v, j) => j <= i ? Math.exp(v) : 0); const z = e.reduce((a, b) => a + b, 0); return e.map(x => x / z); }));
+  const Y = P.map((p, h) => p.map(row => Array.from({ length: HS }, (_, d) => row.reduce((a, pij, j) => a + pij * V[h][j][d], 0))));
+
+  const f1 = v => (v < 0 ? '−' : '') + Math.abs(v).toFixed(1);
+  const f2 = v => (v < 0 ? '−' : '') + Math.abs(v).toFixed(2);
+  const tint = (h, p = 24) => `color-mix(in oklab, var(--h${h}) ${p}%, var(--surface))`;
+  const ntint = (p = 18) => `color-mix(in oklab, var(--neutral) ${p}%, var(--surface))`;
+  const esc = s => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  const range = n => Array.from({ length: n }, (_, i) => i);
+
+  // 768 bar
+  const bar = document.getElementById('bar768');
+  bar.innerHTML = range(12).map(h => `<div class="seg" style="background:${tint(h % 3, 18 + (Math.floor(h / 3) % 2) * 18)}">h${h}<br>64</div>`).join('');
+
+  // generic matrix renderer
+  function mat(o) {
+    const unit = o.num ? 'var(--cn)' : 'var(--cc)';
+    const gapCls = c => { if (!o.gaps) return ''; for (const g of o.gaps) if (c > 0 && c % g.by === 0) return g.cls; return ''; };
+    let h = `<figure class="m">`;
+    if (o.label) h += `<figcaption><b>${o.label}</b>${o.shape ? ' ' + o.shape : ''}</figcaption>`;
+    h += `<div class="g${o.num ? ' num' : ''}" style="grid-template-columns:${o.rl ? 'auto ' : ''}repeat(${o.cols}, ${unit})">`;
+    (o.groups || []).forEach(gr => {
+      if (o.rl) h += '<span></span>';
+      for (let g = 0; g < o.cols / gr.by; g++) h += `<span class="gl ${gapCls(g * gr.by)}" style="grid-column:span ${gr.by};${gr.color ? 'color:' + gr.color(g) : ''}">${gr.label(g)}</span>`;
+    });
+    if (o.cl) { if (o.rl) h += '<span></span>'; range(o.cols).forEach(c => h += `<span class="cl ${gapCls(c)}">${o.cl[c] ?? ''}</span>`); }
+    for (let r = 0; r < o.rows; r++) {
+      if (o.rl) h += `<span class="rl">${o.rl[r]}</span>`;
+      for (let c = 0; c < o.cols; c++) {
+        const x = o.cell(r, c);
+        h += `<span class="c ${gapCls(c)} ${x.cls || ''}"${x.id ? ` id="${x.id}"` : ''}${x.link ? ` data-link="${x.link}"` : ''}${x.info ? ` data-info="${esc(x.info)}"` : ''}${x.tip ? ` title="${esc(x.tip)}"` : ''} style="background:${x.bg || tint(x.h)}">${o.num ? (x.t ?? '') : ''}</span>`;
+      }
+    }
+    return h + '</div></figure>';
+  }
+  const tokRL = range(T).map(t => 'tok' + t);
+  const headOfCol = c => Math.floor(c / HS) % NH;
+
+  // per-head small matrices
+  const qMat = h => mat({ label: `q`, shape: `head ${h} (T×hs)`, rows: T, cols: HS, num: true, rl: tokRL, cl: range(HS).map(d => 'd' + d),
+    cell: (t, d) => ({ t: f1(Q[h][t][d]), h, id: `q-${h}-${t}-${d}` }) });
+  const kTMat = h => mat({ label: `kᵀ`, shape: `head ${h} (hs×T)`, rows: HS, cols: T, num: true, rl: range(HS).map(d => 'd' + d), cl: tokRL,
+    cell: (d, j) => ({ t: f1(K[h][j][d]), h, id: `k-${h}-${j}-${d}` }) });
+  const vMat = h => mat({ label: `v`, shape: `head ${h} (T×hs)`, rows: T, cols: HS, num: true, rl: tokRL, cl: range(HS).map(d => 'd' + d),
+    cell: (j, d) => ({ t: f1(V[h][j][d]), h, id: `v-${h}-${j}-${d}` }) });
+  const sMat = h => mat({ label: `att`, shape: `head ${h} (T×T)`, rows: T, cols: T, num: true, rl: tokRL, cl: tokRL,
+    cell: (i, j) => {
+      const terms = range(HS).map(d => `${f1(Q[h][i][d])}×${f1(K[h][j][d])}`).join(' + ');
+      return { t: f2(S[h][i][j]), h, id: `s-${h}-${i}-${j}`,
+        link: range(HS).map(d => `q-${h}-${i}-${d} k-${h}-${j}-${d}`).join(' '),
+        info: `<b>head ${h}, att[tok${i}, tok${j}]</b> = (q[tok${i}] · k[tok${j}]) / √${HS} = (${terms}) / 2 = <b>${f2(S[h][i][j])}</b>. A dot product over hs = ${HS} numbers.` };
+    } });
+  const pMat = (h, link) => mat({ label: `softmax(masked att)`, shape: `head ${h}`, rows: T, cols: T, num: true, rl: tokRL, cl: tokRL,
+    cell: (i, j) => {
+      if (j > i) return { t: '0', cls: 'masked', id: `p-${h}-${i}-${j}`, link: link ? null : `s-${h}-${i}-${j}`, info: link ? null : `<b>tok${i} → tok${j}</b> is a future token: score set to −inf, softmax gives exactly 0.` };
+      const pv = P[h][i][j];
+      return { t: f2(pv), bg: tint(h, 10 + Math.round(pv * 60)), id: `p-${h}-${i}-${j}`,
+        link: link ? null : range(i + 1).map(jj => `s-${h}-${i}-${jj}`).join(' '),
+        info: link ? null : `<b>head ${h}, row tok${i}</b>: softmax over tok0…tok${i} gives ${range(i + 1).map(jj => f2(P[h][i][jj])).join(' + ')} = 1.00` };
+    } });
+  const yMat = h => mat({ label: `y`, shape: `head ${h} (T×hs)`, rows: T, cols: HS, num: true, rl: tokRL, cl: range(HS).map(d => 'd' + d),
+    cell: (i, d) => ({ t: f2(Y[h][i][d]), h, id: `y-${h}-${i}-${d}`,
+      link: range(T).map(j => `p-${h}-${i}-${j} v-${h}-${j}-${d}`).join(' '),
+      info: `<b>head ${h}, y[tok${i}, d${d}]</b> = ${range(i + 1).map(j => `${f2(P[h][i][j])}×${f1(V[h][j][d])}`).join(' + ')} = <b>${f2(Y[h][i][d])}</b>. A weighted average of column d${d} of v, using row tok${i} of att.` }) });
+
+  const headBlock = (h, inner) => `<div class="headblock" style="border-color:${tint(h, 55)}"><div class="hb-title" style="color:var(--h${h})">head ${h}</div><div class="row">${inner}</div></div>`;
+  const op = s => `<span class="op">${s}</span>`;
+
+  let B = 1, noTranspose = false;
+
+  const steps = [
+    { tab: '0 · x', title: 'Start with x', lines: [28],
+      shape: ['(B, T, C)', '(1, 4, 12)', '(B, 1024, 768)'],
+      text: `<p>Each row is one token's vector of C numbers, coming out of <code>layer_norm_1</code>. Nothing is split into heads yet.</p>`,
+      render: () => mat({ label: 'x', shape: '(T × C)', rows: T, cols: C, num: true, rl: tokRL, cl: range(C).map(c => 'c' + c),
+        cell: (t, c) => ({ t: f1(X[t][c]), bg: ntint() }) }) },
+
+    { tab: '1 · c_attn', title: 'One matmul makes q, k and v', lines: [33],
+      shape: ['(B, T, 3C)', '(1, 4, 36)', '(B, 1024, 2304)'],
+      text: `<p><code>c_attn</code> holds one C × 3C weight. A single (T × C) @ (C × 3C) matmul gives every token its q, k and v for every head at once.</p><p>The colours show which head each column will belong to. Nothing marks that in memory: it is only how later lines read the columns. Hover a cell to see its value.</p>`,
+      render: () => mat({ label: 'qkv', shape: '(T × 3C)', rows: T, cols: 3 * C, rl: tokRL,
+        gaps: [{ by: C, cls: 'gap2' }, { by: HS, cls: 'gap' }],
+        groups: [{ by: C, label: g => ['q', 'k', 'v'][g] }, { by: HS, label: g => 'h' + (g % NH), color: g => `var(--h${g % NH})` }],
+        cell: (t, c) => ({ h: headOfCol(c), tip: `qkv[tok${t}, ${c}] = ${f1(QKV[t][c])}` }) }) },
+
+    { tab: '2 · split', title: 'split: three windows onto qkv', lines: [34],
+      shape: ['3 × (B, T, C)', '3 × (1, 4, 12)', '3 × (B, 1024, 768)'],
+      text: `<p><code>split(n_embd, dim=2)</code> returns three <b>views</b> of the same memory: columns 0–11 are q, 12–23 are k, 24–35 are v. No numbers are copied.</p><p>Each of q, k, v still holds all heads side by side.</p>`,
+      render: () => `<div class="col">${['q', 'k', 'v'].map((n, s) => mat({ label: n, shape: '(T × C)', rows: T, cols: C, num: true, rl: tokRL,
+        gaps: [{ by: HS, cls: 'gap' }], groups: [{ by: HS, label: g => 'h' + g, color: g => `var(--h${g})` }],
+        cell: (t, c) => ({ t: f1(QKV[t][s * C + c]), h: headOfCol(c) }) })).join('')}</div>` },
+
+    { tab: '3 · view', title: 'view: cut each token into nh slices of hs', lines: [35, 36, 37],
+      shape: ['(B, T, nh, hs)', '(1, 4, 3, 4)', '(B, 1024, 12, 64)'],
+      text: `<p><code>view(B, T, n_head, C // n_head)</code> reads each token's 12 numbers as 3 slices of 4. The memory doesn't change; only the indexing does.</p><p>That slice length is <b>hs</b>: one head's query vector for one token. Shown for q; k and v get the same treatment.</p>`,
+      render: () => `<div class="col">${range(T).map(t => mat({ label: `q[tok${t}]`, shape: '(nh × hs)', rows: NH, cols: HS, num: true,
+        rl: range(NH).map(h => 'h' + h), cl: t === 0 ? range(HS).map(d => 'd' + d) : null,
+        cell: (h, d) => ({ t: f1(Q[h][t][d]), h }) })).join('')}</div>` },
+
+    { tab: '4 · transpose', title: 'transpose(1, 2): group by head', lines: [35, 36, 37],
+      shape: ['(B, nh, T, hs)', '(1, 3, 4, 4)', '(B, 12, 1024, 64)'],
+      text: `<p>Swapping dims 1 and 2 puts the head first. Now the <b>last two</b> dims are (T, hs): each head owns a T × hs matrix holding every token's query slice for that head.</p><p>transpose only changes strides, so there's still no copy. These are the same numbers as step 3, regrouped.</p>`,
+      render: () => range(NH).map(h => headBlock(h, qMat(h))).join('') },
+
+    { tab: '5 · q @ kᵀ', title: 'q @ kᵀ: every head in one call', lines: [40], controls: true,
+      shape: ['(B, nh, T, T)', '(1, 3, 4, 4)', '(B, 12, 1024, 1024)'],
+      text: `<p><code>@</code> on 4-D tensors is a <b>batched matmul</b>. It multiplies only the last two dims, (T × hs) @ (hs × T), and treats everything in front, (B, nh), as a stack of independent jobs.</p><p>So the three head panels below are one operation. Change B to see how the stack grows. With B = 16 and 12 heads, that's 192 matmuls in a single call.</p><p>Turn on <i>Skip the transpose</i> to see why step 4 is needed.</p>`,
+      render: () => {
+        const tiles = `<div class="col"><div class="mono" style="font-size:12px;color:var(--muted)">batch dims (B, nh) = (${B}, ${NH}) → ${B * NH} independent matmuls, 1 kernel</div>
+          <div class="tiles" style="grid-template-columns:repeat(${NH}, auto)">${range(B * NH).map(i => `<div class="tile" style="background:${tint(i % NH, i < NH ? 34 : 16)}">b${Math.floor(i / NH)}·h${i % NH}<br>${T}×${T}</div>`).join('')}</div></div>`;
+        if (noTranspose) {
+          return `<div class="col"><p class="warn">Without transpose the last two dims are (nh, hs). The matmul then compares <b>heads with each other inside one token</b>, giving nh × nh matrices per token, instead of comparing tokens with each other inside one head.</p>
+            <div class="row" style="flex-wrap:wrap;gap:18px">${range(T).map(t => mat({ label: `tok${t}`, shape: '(nh × nh)', rows: NH, cols: NH, num: true,
+              rl: range(NH).map(h => 'h' + h), cl: range(NH).map(h => 'h' + h),
+              cell: (a, b) => ({ t: f2(dot(Q[a][t], K[b][t]) * SC), bg: a === b ? tint(a, 24) : 'var(--masked)' }) })).join('')}</div></div>`;
+        }
+        return `<div class="col">${tiles}${range(NH).map(h => headBlock(h, qMat(h) + op('@') + kTMat(h) + op('=') + sMat(h))).join('')}</div>`;
+      } },
+
+    { tab: '6 · mask + softmax', title: 'Mask the future, then softmax', lines: [41, 42],
+      shape: ['(B, nh, T, T)', '(1, 3, 4, 4)', '(B, 12, 1024, 1024)'],
+      text: `<p>Token i may only look at tokens 0…i. <code>masked_fill</code> sets the upper triangle to −inf, so softmax turns those into exactly 0 and each row sums to 1.</p><p>Also batched: one mask slice <code>bias[:, :, :T, :T]</code> of shape (1, 1, T, T) broadcasts across every batch item and head.</p>`,
+      render: () => range(NH).map(h => headBlock(h, sMat(h) + op('→') + pMat(h))).join('') },
+
+    { tab: '7 · att @ v', title: 'att @ v: mix the value vectors', lines: [44],
+      shape: ['(B, nh, T, hs)', '(1, 3, 4, 4)', '(B, 12, 1024, 64)'],
+      text: `<p>Another batched matmul over (B, nh): (T × T) @ (T × hs). Each output row is a weighted average of the value vectors of the tokens that row attends to.</p><p>The result is hs wide again: every head returns one 4-number (64 in GPT-2) vector per token.</p>`,
+      render: () => range(NH).map(h => headBlock(h, pMat(h, true) + op('@') + vMat(h) + op('=') + yMat(h))).join('') },
+
+    { tab: '8 · reassemble', title: 'Put the heads back side by side', lines: [45, 48],
+      shape: ['(B, T, C)', '(1, 4, 12)', '(B, 1024, 768)'],
+      text: `<p><code>transpose(1, 2)</code> goes back to (B, T, nh, hs). After a transpose the memory is no longer in row order, so <code>contiguous()</code> makes the one real copy, and <code>view(B, T, C)</code> joins the nh slices of hs into C.</p><p>Then <code>c_proj</code> (line 48) mixes information across heads and returns to the residual stream.</p>`,
+      render: () => mat({ label: 'y', shape: '(T × C), before c_proj', rows: T, cols: C, num: true, rl: tokRL,
+        gaps: [{ by: HS, cls: 'gap' }], groups: [{ by: HS, label: g => 'h' + g, color: g => `var(--h${g})` }],
+        cell: (t, c) => ({ t: f2(Y[headOfCol(c)][t][c % HS]), h: headOfCol(c) }) }) },
+  ];
+
+  const CODE = {
+    28: 'B, T, C = x.size()',
+    33: 'qkv = self.c_attn(x)',
+    34: 'q, k, v = qkv.split(self.n_embd, dim=2)',
+    35: 'q = q.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)',
+    36: 'k = k.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)',
+    37: 'v = v.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)',
+    40: 'att = (q @ k.transpose(-2, -1)) * (1.0 / math.sqrt(k.size(-1)))',
+    41: "att = att.masked_fill(self.bias[:, :, :T, :T] == 0, float('-inf'))",
+    42: 'att = F.softmax(att, dim=-1)',
+    44: 'y = att @ v',
+    45: 'y = y.transpose(1, 2).contiguous().view(B, T, C)',
+    48: 'y = self.c_proj(y)',
+  };
+
+  const $ = id => document.getElementById(id);
+  const stage = $('stage'), info = $('info');
+  let cur = 0;
+  try { const s = parseInt(localStorage.getItem('csa-step'), 10); if (s >= 0 && s < steps.length) cur = s; } catch (e) {}
+
+  $('steps').innerHTML = steps.map((s, i) => `<button type="button" role="tab" data-i="${i}">${s.tab}</button>`).join('');
+
+  function show(i) {
+    cur = i;
+    try { localStorage.setItem('csa-step', String(i)); } catch (e) {}
+    const s = steps[i];
+    document.querySelectorAll('#steps button').forEach((b, j) => b.setAttribute('aria-current', j === i ? 'step' : 'false'));
+    $('st-title').textContent = s.title;
+    $('st-shape').innerHTML = `<span>shape <b>${s.shape[0]}</b></span><span>toy <b>${s.shape[1]}</b></span><span>GPT-2 <b>${s.shape[2]}</b></span>`;
+    const inner = s.render();
+    stage.innerHTML = `<div class="stage-inner${i === 1 ? ' nowrap' : ''}">${inner}</div>`;
+    $('st-text').innerHTML = s.text;
+    $('ctl-batch').hidden = !s.controls;
+    const interactive = i >= 5 && !(i === 5 && noTranspose);
+    info.hidden = !interactive;
+    info.innerHTML = 'Hover or tap a number to trace where it comes from.';
+    $('code').innerHTML = Object.entries(CODE).map(([n, l]) => `<span class="ln${s.lines.includes(+n) ? ' on' : ''}"><span class="n">${n}</span>${esc(l)}</span>`).join('');
+    $('prev').disabled = i === 0;
+    $('next').disabled = i === steps.length - 1;
+  }
+
+  // hover tracing
+  let lit = [];
+  const clear = () => { lit.forEach(el => el.classList.remove('hl', 'hot')); lit = []; };
+  stage.addEventListener('pointerover', e => {
+    const c = e.target.closest('.c[data-link]');
+    if (!c) return;
+    clear();
+    c.classList.add('hot'); lit.push(c);
+    c.dataset.link.split(' ').forEach(id => { const el = document.getElementById(id); if (el) { el.classList.add('hl'); lit.push(el); } });
+    if (c.dataset.info) info.innerHTML = c.dataset.info;
+  });
+  stage.addEventListener('pointerleave', clear);
+
+  $('steps').addEventListener('click', e => { const b = e.target.closest('button'); if (b) show(+b.dataset.i); });
+  $('prev').addEventListener('click', () => cur > 0 && show(cur - 1));
+  $('next').addEventListener('click', () => cur < steps.length - 1 && show(cur + 1));
+  $('bsel').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    B = +b.dataset.b;
+    document.querySelectorAll('#bsel button').forEach(x => x.setAttribute('aria-pressed', x === b ? 'true' : 'false'));
+    show(cur);
+  });
+  $('noT').addEventListener('change', e => { noTranspose = e.target.checked; show(cur); });
+  document.addEventListener('keydown', e => {
+    if (e.target.matches('input, textarea')) return;
+    if (e.key === 'ArrowRight' && cur < steps.length - 1) show(cur + 1);
+    if (e.key === 'ArrowLeft' && cur > 0) show(cur - 1);
+  });
+
+  show(cur);
+})();
+</script>
+</body>
+</html>

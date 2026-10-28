@@ -8,6 +8,19 @@ __pycache__/
 # Jupyter (if you open the lecture's Colab notebook locally)
 .ipynb_checkpoints/
 
+# Datasets downloaded/generated during the lecture
+input.txt
+edu_fineweb10B/
+hellaswag/
+*.npy
+
+# Training logs and checkpoints
+log/
+*.pt
+*.pth
+*.bin
+*.safetensors
+
 # Editor / OS
 .vscode/
 Thumbs.db
