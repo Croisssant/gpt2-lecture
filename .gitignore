@@ -1,0 +1,14 @@
+# Virtual environment
+.venv/
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# Jupyter (if you open the lecture's Colab notebook locally)
+.ipynb_checkpoints/
+
+# Editor / OS
+.vscode/
+Thumbs.db
+desktop.ini
