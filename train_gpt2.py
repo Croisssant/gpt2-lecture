@@ -217,38 +217,64 @@ class GPT(nn.Module):
 
 
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-device = "cpu"
+import tiktoken
+
+# Load and get batch data
+class DataLoaderLite:
+    def __init__(self, B, T):
+        self.B = B
+        self.T = T
+
+        # At init load tokens from disk and store them in memory
+        with open("input.txt", "r", encoding="utf-8") as f:
+            text = f.read()
+        enc = tiktoken.get_encoding("gpt2")
+        tokens = enc.encode(text)
+        self.tokens = torch.tensor(tokens)
+        print(f"Loaded {len(self.tokens)} tokens")
+        print(f"1 epoch = {len(self.tokens) // (B * T)} batches")
+
+        # State
+        self.current_position = 0
+
+    def next_batch(self):
+        B, T = self.B, self.T
+        buf = self.tokens[self.current_position : self.current_position + B * T + 1]
+        x = buf[:-1].view(B, T) 
+        y = buf[1:].view(B, T)
+
+        # Advance the position in the tensor
+        self.current_position += B * T
+
+        # If loading the next batch would be out of bounds, reset
+        if self.current_position + (B * T + 1) > len(self.tokens):
+            self.current_position = 0
+
+        return x, y
+
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 if torch.cuda.is_available():
     device = "cuda"
 elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
     device = "mps"
 
 print(f"using device: {device}")
-device = "cpu"
 num_return_sequences = 5
 max_length = 30
-
-# Load and get batch data
-import tiktoken
-enc = tiktoken.get_encoding("gpt2")
-with open("input.txt", "r") as f:
-    text = f.read()
-
-text = text[:1000]
-tokens = enc.encode(text)
-B, T = 4, 32
-buf = torch.tensor(tokens[:B*T + 1])
-x = buf[:-1].view(B, T)
-y = buf[1:].view(B, T)
 
 # Get logits
 # model = GPT.from_pretrained("gpt2")
 model = GPT(GPTConfig())
 model.to(device)
 
+train_loader = DataLoaderLite(B=4, T=32)
+
 # Optimize!
 optimizer = torch.optim.AdamW(model.parameters(), lr=3e-4)
 for i in range(50):
+    x, y = train_loader.next_batch()
+    x, y = x.to(device), y.to(device)
+    
     optimizer.zero_grad()
     logits, loss = model(x, y)
     loss.backward()
