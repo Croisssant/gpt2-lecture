@@ -8,15 +8,16 @@ dependencies = [
     "numpy",
     "tiktoken",
     "transformers",
+    "triton-windows>=3.9.0.post30 ; sys_platform == 'win32'",
 ]
 
 [tool.uv]
 package = false
 
 [tool.uv.sources]
-torch = [{ index = "pytorch-cu126" }]
+torch = [{ index = "pytorch-cu130" }]
 
 [[tool.uv.index]]
-name = "pytorch-cu126"
-url = "https://download.pytorch.org/whl/cu126"
+name = "pytorch-cu130"
+url = "https://download.pytorch.org/whl/cu130"
 explicit = true

@@ -9,7 +9,6 @@ __pycache__/
 .ipynb_checkpoints/
 
 # Datasets downloaded/generated during the lecture
-input.txt
 edu_fineweb10B/
 hellaswag/
 *.npy
