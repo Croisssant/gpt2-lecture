@@ -17,6 +17,7 @@ class CausalSelfAttention (nn.Module):
 
         # Output projection
         self.c_proj = nn.Linear(config.n_embd, config.n_embd)
+        self.c_proj.NANOGPT_SCALE_INIT = 1
 
         self.n_head = config.n_head
         self.n_embd = config.n_embd
@@ -60,6 +61,7 @@ class FeedForward(nn.Module):
         self.c_fc = nn.Linear(config.n_embd, 4 * config.n_embd) # From paper, inner-layer has dimensionality of 4 times the dimensionality of input and output
         self.gelu = nn.GELU(approximate="tanh")
         self.c_proj = nn.Linear(4 * config.n_embd, config.n_embd) # Projection layer going back to the residual pathway
+        self.c_proj.NANOGPT_SCALE_INIT = 1
 
     def forward(self, x):
         x = self.c_fc(x)
@@ -143,6 +145,25 @@ class GPT(nn.Module):
     
         # Language Modeling Head
         self.lm_head = nn.Linear(config.n_embd, config.vocab_size, bias=False)
+
+        # Weight sharing scheme
+        self.transformer.wte.weight = self.lm_head.weight
+
+        # Init parameters
+        self.apply(self._init_weights)
+
+    def _init_weights(self, module):
+        std = 0.02
+
+        if isinstance(module, nn.Linear):
+            if hasattr(module, "NANOGPT_SCALE_INIT"):
+                std *= (2 * self.config.n_layer) ** -0.5
+            torch.nn.init.normal_(module.weight, mean=0.0, std=std)
+            if module.bias is not None:
+                torch.nn.init.zeros_(module.bias)
+
+        elif isinstance(module, nn.Embedding):
+            torch.nn.init.normal_(module.weight, mean=0.0, std=std)
 
     def forward(self, idx, targets=None):
         # idx is of shape (B, T)
@@ -253,14 +274,18 @@ class DataLoaderLite:
         return x, y
 
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# Attempt to auto detect the device
+device = "cpu"
 if torch.cuda.is_available():
     device = "cuda"
 elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
     device = "mps"
 
 print(f"using device: {device}")
-num_return_sequences = 5
-max_length = 30
+
+torch.manual_seed(1337)
+if torch.cuda.is_available():
+    torch.cuda.manual_seed(1337)
 
 # Get logits
 # model = GPT.from_pretrained("gpt2")
@@ -283,6 +308,9 @@ for i in range(50):
 
 import sys
 sys.exit("Stopping the script here.")
+
+num_return_sequences = 5
+max_length = 30
 
 # Prefix tokens
 import tiktoken
