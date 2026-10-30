@@ -275,6 +275,8 @@ class DataLoaderLite:
 
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # Attempt to auto detect the device
+import time
+
 device = "cpu"
 if torch.cuda.is_available():
     device = "cuda"
@@ -292,11 +294,15 @@ if torch.cuda.is_available():
 model = GPT(GPTConfig())
 model.to(device)
 
-train_loader = DataLoaderLite(B=4, T=32)
+train_loader = DataLoaderLite(B=16, T=1024)
+
+# Setting data type
+torch.set_float32_matmul_precision('high')
 
 # Optimize!
 optimizer = torch.optim.AdamW(model.parameters(), lr=3e-4)
 for i in range(50):
+    t0 = time.time()
     x, y = train_loader.next_batch()
     x, y = x.to(device), y.to(device)
     
@@ -304,7 +310,12 @@ for i in range(50):
     logits, loss = model(x, y)
     loss.backward()
     optimizer.step()
-    print(f"Step {i}\t loss: {loss.item()}")
+
+    torch.cuda.synchronize() # Waiting for GPU to stop this iteration so we get the accurate time
+    t1 = time.time()
+    dt = (t1 - t0) * 1000 # Time difference in miliseconds
+    tokens_per_sec = (train_loader.B * train_loader.T) / (t1 - t0)
+    print(f"Step {i:4d} | loss: {loss.item():.6f} | dt: {dt:8.2f}ms | tok/sec: {tokens_per_sec:8.0f}")
 
 import sys
 sys.exit("Stopping the script here.")
