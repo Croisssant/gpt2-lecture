@@ -1,0 +1,27 @@
+GPT-2 (124M) speed log
+======================
+Setup : 1x NVIDIA H200 NVL (GPU 0), torch 2.11.0+cu128, driver 570
+Batch : B=16, T=1024 -> 16,384 tokens/step
+Timing: Step 49 (steady state), with torch.cuda.synchronize()
+Ref   : Andrej = 1x A100 80GB, approx. numbers from the video
+
+Optimization          | dt (ms) | tok/sec | loss@49  | x baseline | x prev | Andrej dt (ms)
+----------------------+---------+---------+----------+------------+--------+---------------
+FP32 baseline         |  402.75 |  40,680 | 6.056330 |    1.00x   |   -    |  ~1000
+TF32 matmul           |  167.60 |  97,759 | 6.052906 |    2.40x   | 2.40x  |   ~333
+BF16 autocast         |  151.04 | 108,474 | 6.054614 |    2.67x   | 1.11x  |   ~300
+torch.compile         |         |         |          |            |        |   ~129
+Flash attention       |         |         |          |            |        |    ~96
+Vocab 50257 -> 50304  |         |         |          |            |        |    ~93
+
+Formulas
+  tok/sec    = 16384 / (dt / 1000)
+  x baseline = 402.75 / dt
+  x prev     = previous dt / dt
+
+Notes
+- FP32 baseline: plain FP32, no TF32 or autocast.
+- TF32: torch.set_float32_matmul_precision('high'). Only matmuls sped up (they run on Tensor Cores now).
+- BF16: torch.autocast(device_type="cuda", dtype=torch.bfloat16) around forward + loss only.
+  Small gain: what's left is mostly limited by memory speed (attention matrix, element-wise ops, optimizer).
+- Loss changes in the 3rd decimal between steps are expected from lower-precision matmuls.
