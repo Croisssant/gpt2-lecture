@@ -10,7 +10,7 @@ Optimization          | dt (ms) | tok/sec | loss@49  | x baseline | x prev | And
 FP32 baseline         |  402.75 |  40,680 | 6.056330 |    1.00x   |   -    |  ~1000
 TF32 matmul           |  167.60 |  97,759 | 6.052906 |    2.40x   | 2.40x  |   ~333
 BF16 autocast         |  151.04 | 108,474 | 6.054614 |    2.67x   | 1.11x  |   ~300
-torch.compile         |         |         |          |            |        |   ~129
+torch.compile         |   53.40 | 306,833 | 6.055669 |    7.54x   | 2.83x  |   ~129
 Flash attention       |         |         |          |            |        |    ~96
 Vocab 50257 -> 50304  |         |         |          |            |        |    ~93
 
@@ -24,4 +24,6 @@ Notes
 - TF32: torch.set_float32_matmul_precision('high'). Only matmuls sped up (they run on Tensor Cores now).
 - BF16: torch.autocast(device_type="cuda", dtype=torch.bfloat16) around forward + loss only.
   Small gain: what's left is mostly limited by memory speed (attention matrix, element-wise ops, optimizer).
+- torch.compile: model = torch.compile(model). Combines many small element-wise ops into fewer kernels,
+  so data goes through memory fewer times. Step 0 is very slow (it includes compile time), so ignore it.
 - Loss changes in the 3rd decimal between steps are expected from lower-precision matmuls.

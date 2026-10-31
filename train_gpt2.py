@@ -293,6 +293,7 @@ if torch.cuda.is_available():
 # model = GPT.from_pretrained("gpt2")
 model = GPT(GPTConfig())
 model.to(device)
+model = torch.compile(model)
 
 train_loader = DataLoaderLite(B=16, T=1024)
 
