@@ -12,7 +12,7 @@ TF32 matmul           |  167.60 |  97,759 | 6.052906 |    2.40x   | 2.40x  |   ~
 BF16 autocast         |  151.04 | 108,474 | 6.054614 |    2.67x   | 1.11x  |   ~300
 torch.compile         |   53.40 | 306,833 | 6.055669 |    7.54x   | 2.83x  |   ~129
 Flash attention       |   40.54 | 404,159 | 6.054872 |    9.93x   | 1.32x  |    ~96
-Vocab 50257 -> 50304  |         |         |          |            |        |    ~93
+Vocab 50257 -> 50304  |   38.31 | 427,711 | 6.019991 |   10.51x   | 1.06x  |    ~93
 
 Formulas
   tok/sec    = 16384 / (dt / 1000)
@@ -28,4 +28,8 @@ Notes
   so data goes through memory fewer times. Step 0 is very slow (it includes compile time), so ignore it.
 - Flash attention: F.scaled_dot_product_attention(q, k, v, is_causal=True) replaces the manual
   att/mask/softmax/@v. It never writes the full (B, nh, T, T) matrix to memory.
+- Vocab 50304: GPTConfig(vocab_size=50304). 50304 = 128 x 393, a round size that GPU kernels handle
+  efficiently. The 47 extra tokens never appear in the data, so the model learns to give them ~0 probability.
+  Loss at step 49 changed more here (6.055 -> 6.020): the model has a different shape, so it starts from
+  different random weights. That's not a precision issue.
 - Loss changes in the 3rd decimal between steps are expected from lower-precision matmuls.

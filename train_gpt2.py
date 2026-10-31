@@ -294,7 +294,7 @@ if torch.cuda.is_available():
 
 # Get logits
 # model = GPT.from_pretrained("gpt2")
-model = GPT(GPTConfig())
+model = GPT(GPTConfig(vocab_size=50304))
 model.to(device)
 model = torch.compile(model)
 
