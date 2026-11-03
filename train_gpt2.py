@@ -310,6 +310,13 @@ class DataLoaderLite:
         self.tokens = load_tokens(self.shards[self.current_shard])
         self.current_position = self.B * self.T * self.process_rank
 
+    def load_state(self, current_shard, current_position):
+        # Restore the position from a checkpoint
+        # current_position is rank 0's position (only the master saves it), so offset it for this rank
+        self.current_shard = current_shard
+        self.tokens = load_tokens(self.shards[self.current_shard])
+        self.current_position = current_position + self.B * self.T * self.process_rank
+
     def next_batch(self):
         B, T = self.B, self.T
         buf = self.tokens[self.current_position : self.current_position + B * T + 1]
@@ -410,13 +417,37 @@ enc = tiktoken.get_encoding("gpt2")
 log_dir = "log"
 os.makedirs(log_dir, exist_ok=True)
 log_file = os.path.join(log_dir, "log.txt")
+
+# Resume from the latest checkpoint in log_dir when RESUME=1 is set, e.g. RESUME=1 uv run torchrun ...
+resume = os.environ.get("RESUME", "0") == "1"
+checkpoint = None
+start_step = 0
+if resume:
+    checkpoints = sorted(f for f in os.listdir(log_dir) if f.startswith("model_") and f.endswith(".pt"))
+    assert len(checkpoints) > 0, f"RESUME=1 but no checkpoints found in {log_dir}"
+    checkpoint_path = os.path.join(log_dir, checkpoints[-1])
+    # weights_only=False because the checkpoint also contains GPTConfig, safe since we wrote this file ourselves
+    checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
+    start_step = checkpoint['step']
+    if master_process:
+        print(f"Resuming from {checkpoint_path} at step {start_step}")
+
 if master_process:
-    with open(log_file, "w") as f: # Open for writing to clear the file
-        pass
+    if resume and os.path.exists(log_file):
+        # Drop log lines from the steps we are about to redo, so they don't show up twice
+        with open(log_file, "r") as f:
+            lines = [line for line in f if int(line.split()[0]) < start_step]
+        with open(log_file, "w") as f:
+            f.writelines(lines)
+    else:
+        with open(log_file, "w") as f: # Open for writing to clear the file
+            pass
 
 # Get model
 model = GPT(GPTConfig(vocab_size=50304))
 model.to(device)
+if checkpoint is not None:
+    model.load_state_dict(checkpoint['model']) # Load before compile and DDP so the keys match the plain GPT module
 if use_compile:
     model = torch.compile(model)
 if ddp:
@@ -447,8 +478,12 @@ def get_lr(it):
 
 # Optimize!
 optimizer = raw_model.configure_optimizers(weight_decay=0.1, learning_rate=max_lr, device=device)
+if checkpoint is not None:
+    optimizer.load_state_dict(checkpoint['optimizer'])
+    train_loader.load_state(**checkpoint['train_loader'])
+    del checkpoint # Free the memory, everything has been restored
 
-for step in range(max_steps):
+for step in range(start_step, max_steps):
     t0 = time.time()
     last_step = (step == max_steps - 1)
 
@@ -475,7 +510,7 @@ for step in range(max_steps):
             print(f"Validation loss: {val_loss_accum.item():.4f}")
             with open(log_file, "a") as f:
                 f.write(f"{step} val {val_loss_accum.item():.4f}\n")
-            if step > 0 and (step % 2000 == 0 or last_step):
+            if step > start_step and (step % 2000 == 0 or last_step): # step > start_step so a resumed run doesn't re-save the checkpoint it loaded
                 # Write model checkpoints, with enough state to resume training later
                 checkpoint_path = os.path.join(log_dir, f"model_{step:05d}.pt")
                 checkpoint = {
@@ -489,7 +524,9 @@ for step in range(max_steps):
                         'current_position': train_loader.current_position,
                     },
                 }
-                torch.save(checkpoint, checkpoint_path)
+                # Save to a temporary file and rename it after, so a crash mid-save can't leave a broken "latest" checkpoint
+                torch.save(checkpoint, checkpoint_path + ".tmp")
+                os.replace(checkpoint_path + ".tmp", checkpoint_path)
 
     # Once in a while evaluate hellaswag
     if step % 1000 == 0 or last_step:
