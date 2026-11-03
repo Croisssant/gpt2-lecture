@@ -4,11 +4,14 @@ import inspect
 import time
 import tiktoken
 import os
+
 import torch.nn as nn
+import torch.distributed as dist
 
 from dataclasses import dataclass
 from torch.nn import functional as F
 from torch.distributed import init_process_group, destroy_process_group
+from torch.nn.parallel import DistributedDataParallel as DDP
 
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 class CausalSelfAttention (nn.Module):
@@ -274,9 +277,11 @@ class GPT(nn.Module):
 
 # Load and get batch data
 class DataLoaderLite:
-    def __init__(self, B, T):
+    def __init__(self, B, T, process_rank, num_processes):
         self.B = B
         self.T = T
+        self.process_rank = process_rank
+        self.num_processes = num_processes
 
         # At init load tokens from disk and store them in memory
         with open("input.txt", "r", encoding="utf-8") as f:
@@ -288,7 +293,7 @@ class DataLoaderLite:
         print(f"1 epoch = {len(self.tokens) // (B * T)} batches")
 
         # State
-        self.current_position = 0
+        self.current_position = self.B * self.T * self.process_rank
 
     def next_batch(self):
         B, T = self.B, self.T
@@ -297,11 +302,11 @@ class DataLoaderLite:
         y = buf[1:].view(B, T)
 
         # Advance the position in the tensor
-        self.current_position += B * T
+        self.current_position += B * T * self.num_processes
 
         # If loading the next batch would be out of bounds, reset
-        if self.current_position + (B * T + 1) > len(self.tokens):
-            self.current_position = 0
+        if self.current_position + (B * T * self.num_processes + 1) > len(self.tokens):
+            self.current_position = self.B * self.T * self.process_rank
 
         return x, y
 
@@ -324,7 +329,7 @@ else:
     # Vanilla, non-DDP run
     ddp_rank = 0
     ddp_local_rank = 0
-    ddp_word_size = 1
+    ddp_world_size = 1
     master_process = True
 
     # Attempt to auto-detect device
@@ -349,18 +354,18 @@ if master_process:
     print(f"Total desired batch size: {total_batch_size}")
     print(f"=> Calculated gradient accumulation steps: {grad_accum_steps}")
 
-
-print("I am GPU ", ddp_rank)
-import sys; sys.exit(0)
-train_loader = DataLoaderLite(B=B, T=T)
+train_loader = DataLoaderLite(B=B, T=T, process_rank=ddp_rank, num_processes=ddp_world_size)
 
 # Setting data type
 torch.set_float32_matmul_precision('high')
 
-# Get logits
+# Get model
 model = GPT(GPTConfig(vocab_size=50304))
 model.to(device)
 model = torch.compile(model)
+if ddp:
+    model = DDP(model, device_ids=[ddp_local_rank])
+raw_model = model.module if ddp else model # Always contains the "raw" unwrapped model
 
 max_lr = 6e-4
 min_lr = max_lr * 0.1
@@ -384,7 +389,7 @@ def get_lr(it):
     return min_lr + coeff * (max_lr - min_lr)
 
 # Optimize!
-optimizer = model.configure_optimizers(weight_decay=0.1, learning_rate=max_lr, device=device)
+optimizer = raw_model.configure_optimizers(weight_decay=0.1, learning_rate=max_lr, device=device)
 
 for step in range(max_steps):
     t0 = time.time()
@@ -394,7 +399,7 @@ for step in range(max_steps):
     for micro_step in range(grad_accum_steps):
         x, y = train_loader.next_batch()
         x, y = x.to(device), y.to(device)
-        with torch.autocast(device_type=device, dtype=torch.bfloat16):
+        with torch.autocast(device_type=device_type, dtype=torch.bfloat16):
             logits, loss = model(x, y)
 
         # We have to sacle the loss to account for gradient accumulation,
@@ -403,7 +408,11 @@ for step in range(max_steps):
         # instead of a SUM we want MEAN. Scale the loss here so it comes out right
         loss = loss / grad_accum_steps
         loss_accum += loss.detach()
+        if ddp:
+            model.require_backward_grad_sync = (micro_step == grad_accum_steps - 1)
         loss.backward()
+    if ddp:
+        dist.all_reduce(loss_accum, op=dist.ReduceOp.AVG)
     norm = torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
 
     # Determine and set the learning rate for this iteration
@@ -416,9 +425,13 @@ for step in range(max_steps):
     torch.cuda.synchronize() # Waiting for GPU to stop this iteration so we get the accurate time
     t1 = time.time()
     dt = (t1 - t0) # Time difference in seconds
-    tokens_processed = train_loader.B * train_loader.T * grad_accum_steps
+    tokens_processed = train_loader.B * train_loader.T * grad_accum_steps * ddp_world_size
     tokens_per_sec = tokens_processed / dt
-    print(f"Step {step:4d} | loss: {loss_accum.item():.6f} | lr: {lr:.4e} | norm: {norm:.4f} | dt: {dt*1000:8.2f}s | tok/sec: {tokens_per_sec:8.0f}")
+    if master_process:
+        print(f"Step {step:4d} | loss: {loss_accum.item():.6f} | lr: {lr:.4e} | norm: {norm:.4f} | dt: {dt*1000:8.2f}ms | tok/sec: {tokens_per_sec:8.0f}")
+
+if ddp:
+    destroy_process_group()
 
 import sys
 sys.exit("Stopping the script here.")
