@@ -360,6 +360,31 @@ def get_most_likely_row(tokens, mask, logits):
     return pred_norm
 
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# Helpers for writing to /data, an NFS mount that sometimes fails writes with "OSError: [Errno 22] Invalid argument"
+# A failed write should not crash a run that has been training for hours, so retry, then warn and carry on
+def append_to_log(log_file, line):
+    try:
+        with open(log_file, "a") as f:
+            f.write(line)
+    except OSError as e:
+        print(f"WARNING: could not write to {log_file}: {e}")
+
+def save_checkpoint(checkpoint, checkpoint_path, attempts=3):
+    tmp_path = checkpoint_path + ".tmp"
+    for attempt in range(1, attempts + 1):
+        try:
+            # Save to a temporary file and rename it after, so a failed save can't leave a broken "latest" checkpoint
+            torch.save(checkpoint, tmp_path)
+            os.replace(tmp_path, checkpoint_path)
+            return
+        except (OSError, RuntimeError) as e: # torch.save reports write failures as RuntimeError
+            print(f"WARNING: checkpoint save to {checkpoint_path} failed (attempt {attempt}/{attempts}): {e}")
+            time.sleep(10)
+    if os.path.exists(tmp_path):
+        os.remove(tmp_path)
+    print(f"WARNING: giving up on {checkpoint_path}, training continues")
+
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # Setup Distributed Data Parallel (DDP)
 # torchrun command sets the env variables RANK, LOCAL_RANK, and WORLD_SIZE
 ddp = int(os.environ.get("RANK", -1)) != -1 # Is this a DDP run?
@@ -508,8 +533,7 @@ for step in range(start_step, max_steps):
 
         if master_process:
             print(f"Validation loss: {val_loss_accum.item():.4f}")
-            with open(log_file, "a") as f:
-                f.write(f"{step} val {val_loss_accum.item():.4f}\n")
+            append_to_log(log_file, f"{step} val {val_loss_accum.item():.4f}\n")
             if step > start_step and (step % 2000 == 0 or last_step): # step > start_step so a resumed run doesn't re-save the checkpoint it loaded
                 # Write model checkpoints, with enough state to resume training later
                 checkpoint_path = os.path.join(log_dir, f"model_{step:05d}.pt")
@@ -524,9 +548,7 @@ for step in range(start_step, max_steps):
                         'current_position': train_loader.current_position,
                     },
                 }
-                # Save to a temporary file and rename it after, so a crash mid-save can't leave a broken "latest" checkpoint
-                torch.save(checkpoint, checkpoint_path + ".tmp")
-                os.replace(checkpoint_path + ".tmp", checkpoint_path)
+                save_checkpoint(checkpoint, checkpoint_path)
 
     # Once in a while evaluate hellaswag
     if step % 1000 == 0 or last_step:
@@ -558,8 +580,7 @@ for step in range(start_step, max_steps):
         acc_norm = num_correct_norm / num_total
         if master_process:
             print(f"HellaSwag accuracy: {num_correct_norm}/{num_total}={acc_norm:.4f}")
-            with open(log_file, "a") as f:
-                f.write(f"{step} hella {acc_norm:.4f}\n")
+            append_to_log(log_file, f"{step} hella {acc_norm:.4f}\n")
 
     # Once in awhile generate from the model (except step 0, which is noise)
     if (step > 0 and step % 250 == 0) or last_step:
