@@ -1,6 +1,6 @@
 """
 Downloads and evaluates HellaSwag in Python.
-https://github.com/rowanz/hellaswag
+https://github.com/rowanz/hellaswag (no longer available, the data is downloaded from https://huggingface.co/datasets/Rowan/hellaswag)
 
 Example HellaSwag json item:
 
@@ -29,6 +29,7 @@ import os
 import json
 import requests
 import tiktoken
+import pyarrow.parquet as pq
 from tqdm import tqdm
 import torch
 import torch.nn as nn
@@ -41,6 +42,7 @@ DATA_CACHE_DIR = os.path.join(os.path.dirname(__file__), "hellaswag")
 def download_file(url: str, fname: str, chunk_size=1024):
     """Helper function to download a file from a given url"""
     resp = requests.get(url, stream=True)
+    resp.raise_for_status() # Fail loudly instead of saving an error page (e.g. "404: Not Found") as the data file
     total = int(resp.headers.get("content-length", 0))
     with open(fname, "wb") as file, tqdm(
         desc=fname,
@@ -53,10 +55,12 @@ def download_file(url: str, fname: str, chunk_size=1024):
             size = file.write(data)
             bar.update(size)
 
+# The original GitHub repo (rowanz/hellaswag) is no longer available, so we download the same data
+# from its Hugging Face mirror (Rowan/hellaswag), which is stored as parquet
 hellaswags = {
-    "train": "https://raw.githubusercontent.com/rowanz/hellaswag/master/data/hellaswag_train.jsonl",
-    "val": "https://raw.githubusercontent.com/rowanz/hellaswag/master/data/hellaswag_val.jsonl",
-    "test": "https://raw.githubusercontent.com/rowanz/hellaswag/master/data/hellaswag_test.jsonl",
+    "train": "https://huggingface.co/api/datasets/Rowan/hellaswag/parquet/default/train/0.parquet",
+    "val": "https://huggingface.co/api/datasets/Rowan/hellaswag/parquet/default/validation/0.parquet",
+    "test": "https://huggingface.co/api/datasets/Rowan/hellaswag/parquet/default/test/0.parquet",
 }
 
 enc = tiktoken.get_encoding("gpt2")
@@ -68,7 +72,18 @@ def download(split):
     data_filename = os.path.join(DATA_CACHE_DIR, f"hellaswag_{split}.jsonl")
     if not os.path.exists(data_filename):
         print(f"Downloading {data_url} to {data_filename}...")
-        download_file(data_url, data_filename)
+        parquet_filename = os.path.join(DATA_CACHE_DIR, f"hellaswag_{split}.parquet")
+        download_file(data_url, parquet_filename)
+
+        # Convert to the original jsonl format. The mirror stores label as a string ("3"), so cast it back to int
+        # The test split has no labels (empty string), so leave those as they are
+        with open(data_filename + ".tmp", "w") as f:
+            for row in pq.read_table(parquet_filename).to_pylist():
+                if row["label"] != "":
+                    row["label"] = int(row["label"])
+                f.write(json.dumps(row) + "\n")
+        os.replace(data_filename + ".tmp", data_filename) # Only create the jsonl once it is complete
+        os.remove(parquet_filename)
 
 def render_example(example):
     """
