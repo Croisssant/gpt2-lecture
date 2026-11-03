@@ -341,6 +341,7 @@ else:
 
     print(f"using device: {device}")
 
+device_type = "cuda" if device.startswith("cuda") else device
 torch.manual_seed(1337)
 if torch.cuda.is_available():
     torch.cuda.manual_seed(1337)
