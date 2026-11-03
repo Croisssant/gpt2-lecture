@@ -389,10 +389,10 @@ for step in range(max_steps):
 
     torch.cuda.synchronize() # Waiting for GPU to stop this iteration so we get the accurate time
     t1 = time.time()
-    dt = (t1 - t0) * 1000 # Time difference in miliseconds
+    dt = (t1 - t0) # Time difference in seconds
     tokens_processed = train_loader.B * train_loader.T * grad_accum_steps
     tokens_per_sec = tokens_processed / dt
-    print(f"Step {step:4d} | loss: {loss_accum.item():.6f} | lr: {lr:.4e} | norm: {norm:.4f} | dt: {dt:8.2f}ms | tok/sec: {tokens_per_sec:8.0f}")
+    print(f"Step {step:4d} | loss: {loss_accum.item():.6f} | lr: {lr:.4e} | norm: {norm:.4f} | dt: {dt:8.2f}s | tok/sec: {tokens_per_sec:8.0f}")
 
 import sys
 sys.exit("Stopping the script here.")
