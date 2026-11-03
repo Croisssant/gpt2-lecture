@@ -7,6 +7,7 @@ import os
 
 import torch.nn as nn
 import torch.distributed as dist
+import numpy as np
 
 from dataclasses import dataclass
 from torch.nn import functional as F
@@ -275,24 +276,34 @@ class GPT(nn.Module):
 
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
+def load_tokens(filename):
+    npt = np.load(filename)
+    ptt = torch.tensor(npt, dtype=torch.long)
+    return ptt
+
 # Load and get batch data
 class DataLoaderLite:
-    def __init__(self, B, T, process_rank, num_processes):
+    def __init__(self, B, T, process_rank, num_processes, split):
         self.B = B
         self.T = T
         self.process_rank = process_rank
         self.num_processes = num_processes
+        assert split in {"train", "val"}
 
-        # At init load tokens from disk and store them in memory
-        with open("input.txt", "r", encoding="utf-8") as f:
-            text = f.read()
-        enc = tiktoken.get_encoding("gpt2")
-        tokens = enc.encode(text)
-        self.tokens = torch.tensor(tokens)
-        print(f"Loaded {len(self.tokens)} tokens")
-        print(f"1 epoch = {len(self.tokens) // (B * T)} batches")
+        # Get the shard filenames
+        data_root = "edu_fineweb10B"
+        shards = os.listdir(data_root)
+        shards = [s for s in shards if split in s]
+        shards = sorted(shards)
+        shards = [os.path.join(data_root, s) for s in shards]
+        self.shards = shards
+        assert len(shards) > 0, f"No Shards found for split {split}"
+        if master_process:
+            print(f"Found {len(shards)} shards for split {split}")
 
-        # State
+        # State, init at shard zero
+        self.current_shard = 0
+        self.tokens = load_tokens(self.shards[self.current_shard])
         self.current_position = self.B * self.T * self.process_rank
 
     def next_batch(self):
@@ -304,8 +315,10 @@ class DataLoaderLite:
         # Advance the position in the tensor
         self.current_position += B * T * self.num_processes
 
-        # If loading the next batch would be out of bounds, reset
+        # If loading the next batch would be out of bounds, advance to next shard
         if self.current_position + (B * T * self.num_processes + 1) > len(self.tokens):
+            self.current_shard = (self.current_shard + 1) % len(self.shards)
+            self.tokens = load_tokens(self.shards[self.current_shard])
             self.current_position = self.B * self.T * self.process_rank
 
         return x, y
@@ -355,7 +368,7 @@ if master_process:
     print(f"Total desired batch size: {total_batch_size}")
     print(f"=> Calculated gradient accumulation steps: {grad_accum_steps}")
 
-train_loader = DataLoaderLite(B=B, T=T, process_rank=ddp_rank, num_processes=ddp_world_size)
+train_loader = DataLoaderLite(B=B, T=T, process_rank=ddp_rank, num_processes=ddp_world_size, split="train")
 
 # Setting data type
 torch.set_float32_matmul_precision('high')
@@ -370,8 +383,8 @@ raw_model = model.module if ddp else model # Always contains the "raw" unwrapped
 
 max_lr = 6e-4
 min_lr = max_lr * 0.1
-warmup_steps = 10
-max_steps = 50
+warmup_steps = 715
+max_steps = 19073
 
 def get_lr(it):
     
@@ -429,8 +442,7 @@ for step in range(max_steps):
     tokens_processed = train_loader.B * train_loader.T * grad_accum_steps * ddp_world_size
     tokens_per_sec = tokens_processed / dt
     if master_process:
-        print(f"Step {step:4d} | loss: {loss_accum.item():.6f} | lr: {lr:.4e} | norm: {norm:.4f} | dt: {dt*1000:8.2f}ms | tok/sec: {tokens_per_sec:8.0f}")
-
+        print(f"Step {step:4d} | loss: {loss_accum.item():.6f} | lr: {lr:.4e} | norm: {norm:.4f} | dt: {dt*1000:.2f}ms | tok/sec: {tokens_per_sec:.2f}")
 if ddp:
     destroy_process_group()
 
