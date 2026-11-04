@@ -88,6 +88,16 @@ def render_conversation(conversation, max_tokens=1025):
     return ids[:max_tokens], mask[:max_tokens]
 
 
+def render_for_completion(conversation):
+    assert conversation["messages"][-1]["role"] == "assistant", "Role for last message should be assistant"
+
+    conversation = copy.deepcopy(conversation)
+    conversation["messages"] = conversation["messages"][:-1]
+    ids, _ = render_conversation(conversation)
+    ids.append(special_token_ids["<|assistant_start|>"])
+    return ids
+
+
 if __name__ == "__main__":
 
     def check_raises(conversation, error):
@@ -152,6 +162,22 @@ if __name__ == "__main__":
                                {"role": "assistant", "content": [{"type": "image", "text": "x"}]}]}, ValueError)
     check_raises({"messages": [{"role": "user", "content": "Hi"},
                                {"role": "assistant", "content": 42}]}, ValueError)
+
+    # 7. render_for_completion: drops the last assistant reply and primes the model to answer
+    conv = {"messages": [
+        {"role": "user", "content": "Hi"},
+        {"role": "assistant", "content": "Hello!"},
+    ]}
+    ids = render_for_completion(conv)
+    assert enc.decode(ids) == "<|endoftext|><|user_start|>Hi<|user_end|><|assistant_start|>", enc.decode(ids)
+    assert len(conv["messages"]) == 2, "render_for_completion should not modify the input"
+
+    # 8. render_for_completion: the last message must be from the assistant
+    try:
+        render_for_completion({"messages": [{"role": "user", "content": "Hi"}]})
+        raise RuntimeError("expected AssertionError")
+    except AssertionError:
+        pass
 
     print("all tests passed")
 
