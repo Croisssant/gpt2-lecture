@@ -37,7 +37,7 @@ from torch.nn import functional as F
 from transformers import GPT2LMHeadModel
 
 # -----------------------------------------------------------------------------
-DATA_CACHE_DIR = os.path.join(os.path.dirname(__file__), "hellaswag")
+DATA_CACHE_DIR = "hellaswag"
 
 def download_file(url: str, fname: str, chunk_size=1024):
     """Helper function to download a file from a given url"""
