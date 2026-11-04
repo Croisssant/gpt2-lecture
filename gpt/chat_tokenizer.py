@@ -89,14 +89,69 @@ def render_conversation(conversation, max_tokens=1025):
 
 
 if __name__ == "__main__":
-    conversation = {
-        "messages": [
-            {"role": "system",    "content": "You are a helpful assistant who answers briefly."},
-            {"role": "user",      "content": "What is the capital of France?"},
-            {"role": "assistant", "content": "Paris."},
-        ]
-    }
 
-    ids, mask = render_conversation(conversation)
-    print(len(ids) == len(mask))
-    print(enc.decode(ids))
+    def check_raises(conversation, error):
+        try:
+            render_conversation(conversation)
+        except error:
+            return
+        raise AssertionError(f"expected {error.__name__}")
+
+    # 1. Multi-turn: only the assistant replies are trained on
+    conv = {"messages": [
+        {"role": "user", "content": "Hi"},
+        {"role": "assistant", "content": "Hello!"},
+        {"role": "user", "content": "Bye"},
+        {"role": "assistant", "content": "See you."},
+    ]}
+    ids, mask = render_conversation(conv)
+    trained = enc.decode([t for t, m in zip(ids, mask) if m == 1])
+    assert trained == "Hello!<|assistant_end|>See you.<|assistant_end|>", trained
+
+    # 2. Literal special-token text in the content is treated as plain text
+    conv = {"messages": [
+        {"role": "user", "content": "What does <|endoftext|> mean?"},
+        {"role": "assistant", "content": "It ends a document."},
+    ]}
+    ids, mask = render_conversation(conv)
+    assert ids.count(bos) == 1, "only the real BOS should be token 50256"
+
+    # 3. Rendering does not modify the input (system message merge works on a copy)
+    conv = {"messages": [
+        {"role": "system", "content": "Be brief."},
+        {"role": "user", "content": "Capital of France?"},
+        {"role": "assistant", "content": "Paris."},
+    ]}
+    before = copy.deepcopy(conv)
+    first = render_conversation(conv)
+    second = render_conversation(conv)
+    assert conv == before and first == second
+
+    # 4. Truncation keeps ids and mask the same length
+    ids, mask = render_conversation(conv, max_tokens=5)
+    assert len(ids) == len(mask) == 5
+
+    # 5. Tool use: the python call is trained on, the calculator output is not
+    conv = {"messages": [
+        {"role": "user", "content": "What is 12/60?"},
+        {"role": "assistant", "content": [
+            {"type": "text", "text": "It is "},
+            {"type": "python", "text": "12/60"},
+            {"type": "python_output", "text": "0.2"},
+            {"type": "text", "text": " #### 0.2"},
+        ]},
+    ]}
+    ids, mask = render_conversation(conv)
+    trained = enc.decode([t for t, m in zip(ids, mask) if m == 1])
+    assert trained == "It is <|python_start|>12/60<|python_end|> #### 0.2<|assistant_end|>", trained
+    assert special_token_ids["<|output_start|>"] in ids
+
+    # 6. Invalid conversations raise
+    check_raises({"messages": [{"role": "assistant", "content": "Hi"}]}, AssertionError)
+    check_raises({"messages": [{"role": "user", "content": "Hi"},
+                               {"role": "assistant", "content": [{"type": "image", "text": "x"}]}]}, ValueError)
+    check_raises({"messages": [{"role": "user", "content": "Hi"},
+                               {"role": "assistant", "content": 42}]}, ValueError)
+
+    print("all tests passed")
+
