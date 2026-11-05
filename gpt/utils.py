@@ -1,9 +1,9 @@
 import os
 import torch
-
 import time
 
 from torch.nn import functional as F
+from gpt.model import GPT
 
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # Helper function for HellaSwag eval
@@ -40,6 +40,7 @@ def append_to_log(log_file, line):
     except OSError as e:
         print(f"WARNING: could not write to {log_file}: {e}")
 
+
 def save_checkpoint(checkpoint, checkpoint_path, attempts=3):
     tmp_path = checkpoint_path + ".tmp"
     for attempt in range(1, attempts + 1):
@@ -54,3 +55,38 @@ def save_checkpoint(checkpoint, checkpoint_path, attempts=3):
     if os.path.exists(tmp_path):
         os.remove(tmp_path)
     print(f"WARNING: giving up on {checkpoint_path}, training continues")
+
+
+def load_checkpoint(checkpoint_path, device):
+    checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
+    model = GPT(checkpoint["config"])
+    model.load_state_dict(checkpoint["model"])
+    model.to(device)
+
+    return model, checkpoint
+
+if __name__ == "__main__":
+    import tempfile
+    from gpt.model import GPTConfig
+
+    # Save a tiny model, then check that loading gives back the same model
+    torch.manual_seed(0)
+    original = GPT(GPTConfig(block_size=64, vocab_size=50304, n_layer=2, n_head=2, n_embd=32)).eval()
+    path = os.path.join(tempfile.mkdtemp(), "model_test.pt")
+    torch.save({"model": original.state_dict(), "config": original.config, "step": 123, "optimizer": {"state": {}, "param_groups": []}}, path)
+
+    model, checkpoint = load_checkpoint(path, "cpu")
+    model.eval()
+
+    # The same input gives exactly the same output
+    x = torch.randint(0, 50304, (2, 10))
+    assert torch.equal(model(x)[0], original(x)[0])
+
+    # The config and other entries come back too
+    assert model.config == original.config
+    assert checkpoint["step"] == 123 and "optimizer" in checkpoint
+
+    # Weight tying is still in place
+    assert model.transformer.wte.weight is model.lm_head.weight
+
+    print("all tests passed")
