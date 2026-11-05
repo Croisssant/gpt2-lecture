@@ -1,5 +1,5 @@
 import torch
-from gpt.chat_tokenizer import special_token_ids
+from gpt.chat_tokenizer import special_token_ids, render_conversation, bos
 
 def trim_to_last_reply(ids, mask, max_tokens):
     smaller = min(len(ids), max_tokens)
@@ -45,8 +45,35 @@ def build_xy(rows):
     
     return x, y
 
+
+def chat_batches(task, B, T, buffer_size=100):
+    row_len = T + 1
+    buffer, rows = [], []
+    index = 0
+
+    while True:
+        while len(buffer) < buffer_size and index < len(task):
+            ids, mask = render_conversation(task[index], max_tokens=10**7)
+            index += 1
+
+            trimmed = trim_to_last_reply(ids, mask, row_len)
+
+            if trimmed is not None:
+                buffer.append(trimmed)
+
+        if not buffer:
+            return
+
+        rows.append(pack_row(buffer=buffer, row_len=row_len, pad=bos))
+
+        if len(rows) >= B:
+            yield build_xy(rows)
+            rows = []
+
+
+
 if __name__ == "__main__":
-    from gpt.chat_tokenizer import render_conversation, enc, bos
+    from gpt.chat_tokenizer import enc
 
     conv = {"messages": [
         {"role": "user", "content": "Hi there"},
