@@ -47,3 +47,6 @@ class GSM8K:
     
     def evaluate(self, conversation, completion):
         return int(extract_answer(completion) == extract_answer(conversation["messages"][-1]["content"][-1]["text"]))
+
+    def reward(self, conversation, completion):
+        return float(self.evaluate(conversation, completion))
