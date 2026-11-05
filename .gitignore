@@ -14,7 +14,7 @@ hellaswag/
 *.npy
 
 # Training logs and checkpoints
-log/
+*.tmp
 *.pt
 *.pth
 *.bin
