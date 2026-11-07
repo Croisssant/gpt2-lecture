@@ -71,7 +71,7 @@ use_compile = True # Compiled model is only used for training and val loss, Hell
 enc = tiktoken.get_encoding("gpt2")
 
 # Create the log directory we will write checkpoints to and log to
-log_dir = "log"
+log_dir = "run_logs/pretrain"
 os.makedirs(log_dir, exist_ok=True)
 log_file = os.path.join(log_dir, "log.txt")
 

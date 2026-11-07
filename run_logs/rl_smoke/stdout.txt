@@ -1,0 +1,16 @@
+warning: `VIRTUAL_ENV=/home/app/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead
+using device: cuda
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+num decayed parameter tensors: 50, with 124,354,560 parameters
+num non-decayed parameter tensors: 98, with 121,344 parameters
+using fused AdamW: True
+0 pass@1 0.0000
+0 pass@8 0.1500
+Step    0 | reward: 0.0117 | signal: 0.19 | lr: 3.0000e-05 | norm: 0.0508 | dt: 107.0s
+0 reward 0.0117
+0 signal 0.1875
+Step    1 | reward: 0.0039 | signal: 0.06 | lr: 1.5000e-05 | norm: 0.0434 | dt: 9.7s
+1 reward 0.0039
+1 signal 0.0625
+2 pass@1 0.0500
+2 pass@8 0.2000

@@ -1,0 +1,1048 @@
+using device: cuda
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+num decayed parameter tensors: 50, with 124,354,560 parameters
+num non-decayed parameter tensors: 98, with 121,344 parameters
+using fused AdamW: True
+0 pass@1 0.0100
+0 pass@8 0.1200
+Step    0 | reward: 0.0137 | signal: 0.19 | length: 139 | lr: 5.0000e-06 | norm: 0.0547 | dt: 117.3s
+0 reward 0.0137
+0 signal 0.1875
+0 length 139.4414
+Step    1 | reward: 0.0117 | signal: 0.12 | length: 139 | lr: 4.9785e-06 | norm: 0.0439 | dt: 29.3s
+1 reward 0.0117
+1 signal 0.1250
+1 length 139.2441
+Step    2 | reward: 0.0176 | signal: 0.25 | length: 135 | lr: 4.9571e-06 | norm: 0.0469 | dt: 27.3s
+2 reward 0.0176
+2 signal 0.2500
+2 length 134.7520
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step    3 | reward: 0.0176 | signal: 0.25 | length: 137 | lr: 4.9356e-06 | norm: 0.0552 | dt: 33.0s
+3 reward 0.0176
+3 signal 0.2500
+3 length 136.7910
+Step    4 | reward: 0.0195 | signal: 0.22 | length: 138 | lr: 4.9142e-06 | norm: 0.0551 | dt: 27.4s
+4 reward 0.0195
+4 signal 0.2188
+4 length 138.1875
+Step    5 | reward: 0.0156 | signal: 0.16 | length: 135 | lr: 4.8927e-06 | norm: 0.0522 | dt: 28.6s
+5 reward 0.0156
+5 signal 0.1562
+5 length 134.8164
+Step    6 | reward: 0.0234 | signal: 0.19 | length: 138 | lr: 4.8712e-06 | norm: 0.0597 | dt: 27.4s
+6 reward 0.0234
+6 signal 0.1875
+6 length 138.4863
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step    7 | reward: 0.0293 | signal: 0.22 | length: 131 | lr: 4.8498e-06 | norm: 0.0546 | dt: 24.6s
+7 reward 0.0293
+7 signal 0.2188
+7 length 131.2227
+Step    8 | reward: 0.0195 | signal: 0.22 | length: 138 | lr: 4.8283e-06 | norm: 0.0676 | dt: 31.4s
+8 reward 0.0195
+8 signal 0.2188
+8 length 137.9082
+Step    9 | reward: 0.0215 | signal: 0.22 | length: 125 | lr: 4.8069e-06 | norm: 0.0626 | dt: 23.6s
+9 reward 0.0215
+9 signal 0.2188
+9 length 124.5801
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step   10 | reward: 0.0195 | signal: 0.22 | length: 137 | lr: 4.7854e-06 | norm: 0.0709 | dt: 27.9s
+10 reward 0.0195
+10 signal 0.2188
+10 length 136.6758
+Step   11 | reward: 0.0312 | signal: 0.34 | length: 125 | lr: 4.7639e-06 | norm: 0.0750 | dt: 26.5s
+11 reward 0.0312
+11 signal 0.3438
+11 length 125.4980
+Step   12 | reward: 0.0273 | signal: 0.41 | length: 125 | lr: 4.7425e-06 | norm: 0.0696 | dt: 27.6s
+12 reward 0.0273
+12 signal 0.4062
+12 length 125.0723
+<string>:1: SyntaxWarning: 'float' object is not callable; perhaps you missed a comma?
+Step   13 | reward: 0.0195 | signal: 0.25 | length: 120 | lr: 4.7210e-06 | norm: 0.0568 | dt: 24.0s
+13 reward 0.0195
+13 signal 0.2500
+13 length 119.7969
+Step   14 | reward: 0.0293 | signal: 0.31 | length: 126 | lr: 4.6996e-06 | norm: 0.0601 | dt: 27.2s
+14 reward 0.0293
+14 signal 0.3125
+14 length 125.6465
+Step   15 | reward: 0.0098 | signal: 0.16 | length: 121 | lr: 4.6781e-06 | norm: 0.0406 | dt: 23.9s
+15 reward 0.0098
+15 signal 0.1562
+15 length 120.6660
+Step   16 | reward: 0.0215 | signal: 0.25 | length: 123 | lr: 4.6567e-06 | norm: 0.0657 | dt: 22.5s
+16 reward 0.0215
+16 signal 0.2500
+16 length 123.2832
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step   17 | reward: 0.0371 | signal: 0.41 | length: 116 | lr: 4.6352e-06 | norm: 0.0877 | dt: 24.0s
+17 reward 0.0371
+17 signal 0.4062
+17 length 116.0586
+Step   18 | reward: 0.0137 | signal: 0.19 | length: 114 | lr: 4.6137e-06 | norm: 0.0609 | dt: 21.2s
+18 reward 0.0137
+18 signal 0.1875
+18 length 113.8906
+Step   19 | reward: 0.0273 | signal: 0.31 | length: 112 | lr: 4.5923e-06 | norm: 0.0754 | dt: 22.5s
+19 reward 0.0273
+19 signal 0.3125
+19 length 112.0312
+Step   20 | reward: 0.0410 | signal: 0.34 | length: 116 | lr: 4.5708e-06 | norm: 0.0860 | dt: 23.2s
+20 reward 0.0410
+20 signal 0.3438
+20 length 116.2129
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step   21 | reward: 0.0293 | signal: 0.31 | length: 111 | lr: 4.5494e-06 | norm: 0.0761 | dt: 22.6s
+21 reward 0.0293
+21 signal 0.3125
+21 length 111.0176
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step   22 | reward: 0.0254 | signal: 0.22 | length: 113 | lr: 4.5279e-06 | norm: 0.0729 | dt: 22.4s
+22 reward 0.0254
+22 signal 0.2188
+22 length 112.5176
+Step   23 | reward: 0.0234 | signal: 0.31 | length: 110 | lr: 4.5064e-06 | norm: 0.0701 | dt: 22.2s
+23 reward 0.0234
+23 signal 0.3125
+23 length 109.8906
+Step   24 | reward: 0.0527 | signal: 0.47 | length: 104 | lr: 4.4850e-06 | norm: 0.1050 | dt: 21.0s
+24 reward 0.0527
+24 signal 0.4688
+24 length 103.7207
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step   25 | reward: 0.0527 | signal: 0.44 | length: 104 | lr: 4.4635e-06 | norm: 0.1045 | dt: 21.3s
+25 reward 0.0527
+25 signal 0.4375
+25 length 104.1934
+Step   26 | reward: 0.0391 | signal: 0.31 | length: 98 | lr: 4.4421e-06 | norm: 0.0818 | dt: 19.4s
+26 reward 0.0391
+26 signal 0.3125
+26 length 98.2637
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step   27 | reward: 0.0137 | signal: 0.22 | length: 94 | lr: 4.4206e-06 | norm: 0.0663 | dt: 16.9s
+27 reward 0.0137
+27 signal 0.2188
+27 length 93.5293
+Step   28 | reward: 0.0234 | signal: 0.25 | length: 96 | lr: 4.3991e-06 | norm: 0.0737 | dt: 17.4s
+28 reward 0.0234
+28 signal 0.2500
+28 length 96.3262
+<string>:1: SyntaxWarning: 'float' object is not callable; perhaps you missed a comma?
+Step   29 | reward: 0.0234 | signal: 0.25 | length: 99 | lr: 4.3777e-06 | norm: 0.0711 | dt: 19.1s
+29 reward 0.0234
+29 signal 0.2500
+29 length 99.4043
+Step   30 | reward: 0.0469 | signal: 0.47 | length: 97 | lr: 4.3562e-06 | norm: 0.0960 | dt: 19.8s
+30 reward 0.0469
+30 signal 0.4688
+30 length 97.4648
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step   31 | reward: 0.0293 | signal: 0.28 | length: 94 | lr: 4.3348e-06 | norm: 0.0811 | dt: 17.7s
+31 reward 0.0293
+31 signal 0.2812
+31 length 94.3320
+Step   32 | reward: 0.0117 | signal: 0.16 | length: 98 | lr: 4.3133e-06 | norm: 0.0553 | dt: 17.0s
+32 reward 0.0117
+32 signal 0.1562
+32 length 98.2910
+Step   33 | reward: 0.0195 | signal: 0.22 | length: 91 | lr: 4.2918e-06 | norm: 0.0631 | dt: 16.3s
+33 reward 0.0195
+33 signal 0.2188
+33 length 90.8652
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step   34 | reward: 0.0215 | signal: 0.19 | length: 93 | lr: 4.2704e-06 | norm: 0.0773 | dt: 18.3s
+34 reward 0.0215
+34 signal 0.1875
+34 length 93.1445
+Step   35 | reward: 0.0293 | signal: 0.38 | length: 92 | lr: 4.2489e-06 | norm: 0.0788 | dt: 16.5s
+35 reward 0.0293
+35 signal 0.3750
+35 length 91.5000
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+<string>:1: SyntaxWarning: 'float' object is not callable; perhaps you missed a comma?
+Step   36 | reward: 0.0547 | signal: 0.41 | length: 90 | lr: 4.2275e-06 | norm: 0.1119 | dt: 16.9s
+36 reward 0.0547
+36 signal 0.4062
+36 length 90.3340
+Step   37 | reward: 0.0312 | signal: 0.34 | length: 82 | lr: 4.2060e-06 | norm: 0.0781 | dt: 17.1s
+37 reward 0.0312
+37 signal 0.3438
+37 length 82.2676
+Step   38 | reward: 0.0527 | signal: 0.47 | length: 81 | lr: 4.1845e-06 | norm: 0.1042 | dt: 17.9s
+38 reward 0.0527
+38 signal 0.4688
+38 length 80.9727
+Step   39 | reward: 0.0254 | signal: 0.38 | length: 86 | lr: 4.1631e-06 | norm: 0.0798 | dt: 17.0s
+39 reward 0.0254
+39 signal 0.3750
+39 length 85.6387
+Step   40 | reward: 0.0352 | signal: 0.31 | length: 87 | lr: 4.1416e-06 | norm: 0.0899 | dt: 15.4s
+40 reward 0.0352
+40 signal 0.3125
+40 length 86.9629
+Step   41 | reward: 0.0469 | signal: 0.41 | length: 82 | lr: 4.1202e-06 | norm: 0.1027 | dt: 14.5s
+41 reward 0.0469
+41 signal 0.4062
+41 length 82.3789
+Step   42 | reward: 0.0352 | signal: 0.34 | length: 86 | lr: 4.0987e-06 | norm: 0.0802 | dt: 17.1s
+42 reward 0.0352
+42 signal 0.3438
+42 length 86.3594
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step   43 | reward: 0.0195 | signal: 0.25 | length: 80 | lr: 4.0773e-06 | norm: 0.0634 | dt: 14.0s
+43 reward 0.0195
+43 signal 0.2500
+43 length 80.0156
+Step   44 | reward: 0.0352 | signal: 0.31 | length: 83 | lr: 4.0558e-06 | norm: 0.0822 | dt: 14.9s
+44 reward 0.0352
+44 signal 0.3125
+44 length 82.9258
+Step   45 | reward: 0.0352 | signal: 0.34 | length: 83 | lr: 4.0343e-06 | norm: 0.0896 | dt: 14.4s
+45 reward 0.0352
+45 signal 0.3438
+45 length 83.0508
+Step   46 | reward: 0.0352 | signal: 0.31 | length: 81 | lr: 4.0129e-06 | norm: 0.0870 | dt: 13.6s
+46 reward 0.0352
+46 signal 0.3125
+46 length 80.9902
+Step   47 | reward: 0.0156 | signal: 0.19 | length: 83 | lr: 3.9914e-06 | norm: 0.0690 | dt: 14.0s
+47 reward 0.0156
+47 signal 0.1875
+47 length 82.6719
+Step   48 | reward: 0.0469 | signal: 0.38 | length: 79 | lr: 3.9700e-06 | norm: 0.0965 | dt: 13.0s
+48 reward 0.0469
+48 signal 0.3750
+48 length 78.9023
+Step   49 | reward: 0.0449 | signal: 0.44 | length: 81 | lr: 3.9485e-06 | norm: 0.0966 | dt: 13.3s
+49 reward 0.0449
+49 signal 0.4375
+49 length 80.5176
+Step   50 | reward: 0.0156 | signal: 0.19 | length: 85 | lr: 3.9270e-06 | norm: 0.0601 | dt: 13.4s
+50 reward 0.0156
+50 signal 0.1875
+50 length 84.7656
+Step   51 | reward: 0.0586 | signal: 0.47 | length: 81 | lr: 3.9056e-06 | norm: 0.1113 | dt: 13.4s
+51 reward 0.0586
+51 signal 0.4688
+51 length 81.4609
+Step   52 | reward: 0.0508 | signal: 0.50 | length: 77 | lr: 3.8841e-06 | norm: 0.1161 | dt: 12.5s
+52 reward 0.0508
+52 signal 0.5000
+52 length 76.6758
+Step   53 | reward: 0.0215 | signal: 0.28 | length: 75 | lr: 3.8627e-06 | norm: 0.0845 | dt: 12.5s
+53 reward 0.0215
+53 signal 0.2812
+53 length 74.6074
+Step   54 | reward: 0.0195 | signal: 0.22 | length: 83 | lr: 3.8412e-06 | norm: 0.0655 | dt: 15.3s
+54 reward 0.0195
+54 signal 0.2188
+54 length 82.8418
+Step   55 | reward: 0.0391 | signal: 0.25 | length: 78 | lr: 3.8197e-06 | norm: 0.0853 | dt: 12.1s
+55 reward 0.0391
+55 signal 0.2500
+55 length 77.6602
+Step   56 | reward: 0.0391 | signal: 0.38 | length: 81 | lr: 3.7983e-06 | norm: 0.0919 | dt: 12.5s
+56 reward 0.0391
+56 signal 0.3750
+56 length 80.5352
+Step   57 | reward: 0.0430 | signal: 0.34 | length: 80 | lr: 3.7768e-06 | norm: 0.0827 | dt: 13.1s
+57 reward 0.0430
+57 signal 0.3438
+57 length 80.2227
+Step   58 | reward: 0.0352 | signal: 0.28 | length: 78 | lr: 3.7554e-06 | norm: 0.0922 | dt: 13.3s
+58 reward 0.0352
+58 signal 0.2812
+58 length 78.0957
+Step   59 | reward: 0.0762 | signal: 0.50 | length: 79 | lr: 3.7339e-06 | norm: 0.1290 | dt: 14.4s
+59 reward 0.0762
+59 signal 0.5000
+59 length 78.7871
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+60 pass@1 0.0400
+60 pass@8 0.2150
+Step   60 | reward: 0.0566 | signal: 0.47 | length: 76 | lr: 3.7124e-06 | norm: 0.1280 | dt: 12.7s
+60 reward 0.0566
+60 signal 0.4688
+60 length 75.8105
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step   61 | reward: 0.0664 | signal: 0.47 | length: 78 | lr: 3.6910e-06 | norm: 0.1154 | dt: 11.7s
+61 reward 0.0664
+61 signal 0.4688
+61 length 78.0664
+Step   62 | reward: 0.0488 | signal: 0.38 | length: 79 | lr: 3.6695e-06 | norm: 0.1104 | dt: 14.1s
+62 reward 0.0488
+62 signal 0.3750
+62 length 79.2930
+Step   63 | reward: 0.0293 | signal: 0.28 | length: 80 | lr: 3.6481e-06 | norm: 0.0849 | dt: 14.0s
+63 reward 0.0293
+63 signal 0.2812
+63 length 80.2188
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step   64 | reward: 0.0293 | signal: 0.31 | length: 75 | lr: 3.6266e-06 | norm: 0.1077 | dt: 12.6s
+64 reward 0.0293
+64 signal 0.3125
+64 length 75.3555
+Step   65 | reward: 0.0293 | signal: 0.22 | length: 82 | lr: 3.6052e-06 | norm: 0.0889 | dt: 13.3s
+65 reward 0.0293
+65 signal 0.2188
+65 length 82.0117
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step   66 | reward: 0.0332 | signal: 0.25 | length: 79 | lr: 3.5837e-06 | norm: 0.0867 | dt: 12.1s
+66 reward 0.0332
+66 signal 0.2500
+66 length 78.8711
+Step   67 | reward: 0.0625 | signal: 0.38 | length: 74 | lr: 3.5622e-06 | norm: 0.0991 | dt: 11.5s
+67 reward 0.0625
+67 signal 0.3750
+67 length 74.3125
+Step   68 | reward: 0.0312 | signal: 0.22 | length: 75 | lr: 3.5408e-06 | norm: 0.0763 | dt: 11.1s
+68 reward 0.0312
+68 signal 0.2188
+68 length 75.3848
+Step   69 | reward: 0.0430 | signal: 0.28 | length: 81 | lr: 3.5193e-06 | norm: 0.0859 | dt: 14.1s
+69 reward 0.0430
+69 signal 0.2812
+69 length 80.9336
+Step   70 | reward: 0.0293 | signal: 0.34 | length: 77 | lr: 3.4979e-06 | norm: 0.1008 | dt: 12.5s
+70 reward 0.0293
+70 signal 0.3438
+70 length 76.5859
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step   71 | reward: 0.0586 | signal: 0.38 | length: 77 | lr: 3.4764e-06 | norm: 0.1002 | dt: 11.8s
+71 reward 0.0586
+71 signal 0.3750
+71 length 76.6426
+Step   72 | reward: 0.0527 | signal: 0.47 | length: 73 | lr: 3.4549e-06 | norm: 0.1128 | dt: 11.3s
+72 reward 0.0527
+72 signal 0.4688
+72 length 72.6504
+Step   73 | reward: 0.0488 | signal: 0.41 | length: 80 | lr: 3.4335e-06 | norm: 0.1072 | dt: 12.9s
+73 reward 0.0488
+73 signal 0.4062
+73 length 79.9336
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step   74 | reward: 0.0352 | signal: 0.41 | length: 74 | lr: 3.4120e-06 | norm: 0.1105 | dt: 11.6s
+74 reward 0.0352
+74 signal 0.4062
+74 length 73.8672
+Step   75 | reward: 0.0918 | signal: 0.59 | length: 74 | lr: 3.3906e-06 | norm: 0.1360 | dt: 14.7s
+75 reward 0.0918
+75 signal 0.5938
+75 length 74.4004
+Step   76 | reward: 0.0371 | signal: 0.31 | length: 77 | lr: 3.3691e-06 | norm: 0.0871 | dt: 12.9s
+76 reward 0.0371
+76 signal 0.3125
+76 length 76.5605
+Step   77 | reward: 0.0625 | signal: 0.41 | length: 79 | lr: 3.3476e-06 | norm: 0.0944 | dt: 13.2s
+77 reward 0.0625
+77 signal 0.4062
+77 length 78.9746
+Step   78 | reward: 0.0332 | signal: 0.28 | length: 79 | lr: 3.3262e-06 | norm: 0.0962 | dt: 12.4s
+78 reward 0.0332
+78 signal 0.2812
+78 length 79.4453
+Step   79 | reward: 0.0352 | signal: 0.22 | length: 81 | lr: 3.3047e-06 | norm: 0.0940 | dt: 13.0s
+79 reward 0.0352
+79 signal 0.2188
+79 length 81.0312
+Step   80 | reward: 0.0625 | signal: 0.25 | length: 73 | lr: 3.2833e-06 | norm: 0.0846 | dt: 11.8s
+80 reward 0.0625
+80 signal 0.2500
+80 length 73.2891
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step   81 | reward: 0.0645 | signal: 0.50 | length: 75 | lr: 3.2618e-06 | norm: 0.1182 | dt: 13.0s
+81 reward 0.0645
+81 signal 0.5000
+81 length 74.8750
+Step   82 | reward: 0.0762 | signal: 0.41 | length: 73 | lr: 3.2403e-06 | norm: 0.0898 | dt: 10.5s
+82 reward 0.0762
+82 signal 0.4062
+82 length 72.8945
+Step   83 | reward: 0.0508 | signal: 0.28 | length: 75 | lr: 3.2189e-06 | norm: 0.0885 | dt: 12.7s
+83 reward 0.0508
+83 signal 0.2812
+83 length 74.6836
+Step   84 | reward: 0.0410 | signal: 0.38 | length: 72 | lr: 3.1974e-06 | norm: 0.0957 | dt: 11.0s
+84 reward 0.0410
+84 signal 0.3750
+84 length 72.1758
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step   85 | reward: 0.0449 | signal: 0.38 | length: 75 | lr: 3.1760e-06 | norm: 0.1066 | dt: 11.9s
+85 reward 0.0449
+85 signal 0.3750
+85 length 75.4727
+Step   86 | reward: 0.0391 | signal: 0.41 | length: 76 | lr: 3.1545e-06 | norm: 0.0974 | dt: 12.5s
+86 reward 0.0391
+86 signal 0.4062
+86 length 75.9297
+Step   87 | reward: 0.0879 | signal: 0.41 | length: 71 | lr: 3.1330e-06 | norm: 0.1085 | dt: 11.3s
+87 reward 0.0879
+87 signal 0.4062
+87 length 70.5742
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step   88 | reward: 0.0742 | signal: 0.50 | length: 71 | lr: 3.1116e-06 | norm: 0.1269 | dt: 10.0s
+88 reward 0.0742
+88 signal 0.5000
+88 length 70.9199
+Step   89 | reward: 0.0742 | signal: 0.50 | length: 69 | lr: 3.0901e-06 | norm: 0.1390 | dt: 10.8s
+89 reward 0.0742
+89 signal 0.5000
+89 length 69.3613
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step   90 | reward: 0.0547 | signal: 0.28 | length: 71 | lr: 3.0687e-06 | norm: 0.0851 | dt: 10.5s
+90 reward 0.0547
+90 signal 0.2812
+90 length 71.0527
+Step   91 | reward: 0.0508 | signal: 0.34 | length: 71 | lr: 3.0472e-06 | norm: 0.1102 | dt: 11.5s
+91 reward 0.0508
+91 signal 0.3438
+91 length 71.1406
+Step   92 | reward: 0.0469 | signal: 0.34 | length: 74 | lr: 3.0258e-06 | norm: 0.1061 | dt: 11.1s
+92 reward 0.0469
+92 signal 0.3438
+92 length 73.7188
+Step   93 | reward: 0.0547 | signal: 0.38 | length: 71 | lr: 3.0043e-06 | norm: 0.1184 | dt: 12.3s
+93 reward 0.0547
+93 signal 0.3750
+93 length 70.8789
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step   94 | reward: 0.0605 | signal: 0.41 | length: 68 | lr: 2.9828e-06 | norm: 0.1100 | dt: 10.5s
+94 reward 0.0605
+94 signal 0.4062
+94 length 68.4434
+Step   95 | reward: 0.0449 | signal: 0.34 | length: 69 | lr: 2.9614e-06 | norm: 0.0864 | dt: 10.2s
+95 reward 0.0449
+95 signal 0.3438
+95 length 68.6543
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step   96 | reward: 0.0449 | signal: 0.28 | length: 72 | lr: 2.9399e-06 | norm: 0.0909 | dt: 10.6s
+96 reward 0.0449
+96 signal 0.2812
+96 length 71.7148
+Step   97 | reward: 0.0332 | signal: 0.28 | length: 70 | lr: 2.9185e-06 | norm: 0.1029 | dt: 10.6s
+97 reward 0.0332
+97 signal 0.2812
+97 length 70.0117
+Step   98 | reward: 0.0410 | signal: 0.25 | length: 66 | lr: 2.8970e-06 | norm: 0.0935 | dt: 9.2s
+98 reward 0.0410
+98 signal 0.2500
+98 length 65.9473
+<string>:1: SyntaxWarning: 'float' object is not callable; perhaps you missed a comma?
+Step   99 | reward: 0.0469 | signal: 0.44 | length: 69 | lr: 2.8755e-06 | norm: 0.1077 | dt: 11.8s
+99 reward 0.0469
+99 signal 0.4375
+99 length 69.1309
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step  100 | reward: 0.0488 | signal: 0.28 | length: 67 | lr: 2.8541e-06 | norm: 0.0982 | dt: 10.3s
+100 reward 0.0488
+100 signal 0.2812
+100 length 66.9844
+Step  101 | reward: 0.0410 | signal: 0.28 | length: 66 | lr: 2.8326e-06 | norm: 0.1059 | dt: 10.2s
+101 reward 0.0410
+101 signal 0.2812
+101 length 66.1797
+Step  102 | reward: 0.0469 | signal: 0.41 | length: 68 | lr: 2.8112e-06 | norm: 0.1174 | dt: 10.6s
+102 reward 0.0469
+102 signal 0.4062
+102 length 67.5586
+Step  103 | reward: 0.0723 | signal: 0.44 | length: 66 | lr: 2.7897e-06 | norm: 0.1206 | dt: 9.4s
+103 reward 0.0723
+103 signal 0.4375
+103 length 66.4492
+Step  104 | reward: 0.0820 | signal: 0.47 | length: 65 | lr: 2.7682e-06 | norm: 0.1372 | dt: 13.1s
+104 reward 0.0820
+104 signal 0.4688
+104 length 64.5586
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step  105 | reward: 0.0605 | signal: 0.44 | length: 64 | lr: 2.7468e-06 | norm: 0.1372 | dt: 9.4s
+105 reward 0.0605
+105 signal 0.4375
+105 length 64.3281
+Step  106 | reward: 0.0410 | signal: 0.22 | length: 67 | lr: 2.7253e-06 | norm: 0.1084 | dt: 10.3s
+106 reward 0.0410
+106 signal 0.2188
+106 length 67.1992
+Step  107 | reward: 0.0566 | signal: 0.41 | length: 67 | lr: 2.7039e-06 | norm: 0.1206 | dt: 9.6s
+107 reward 0.0566
+107 signal 0.4062
+107 length 66.8086
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step  108 | reward: 0.0762 | signal: 0.44 | length: 70 | lr: 2.6824e-06 | norm: 0.1251 | dt: 12.0s
+108 reward 0.0762
+108 signal 0.4375
+108 length 70.1074
+Step  109 | reward: 0.0645 | signal: 0.28 | length: 64 | lr: 2.6609e-06 | norm: 0.1036 | dt: 8.7s
+109 reward 0.0645
+109 signal 0.2812
+109 length 64.2793
+Step  110 | reward: 0.0234 | signal: 0.25 | length: 69 | lr: 2.6395e-06 | norm: 0.0844 | dt: 11.2s
+110 reward 0.0234
+110 signal 0.2500
+110 length 68.7285
+Step  111 | reward: 0.0234 | signal: 0.22 | length: 67 | lr: 2.6180e-06 | norm: 0.0918 | dt: 10.3s
+111 reward 0.0234
+111 signal 0.2188
+111 length 66.5840
+Step  112 | reward: 0.0391 | signal: 0.22 | length: 71 | lr: 2.5966e-06 | norm: 0.0902 | dt: 10.9s
+112 reward 0.0391
+112 signal 0.2188
+112 length 70.6211
+<string>:1: SyntaxWarning: 'float' object is not callable; perhaps you missed a comma?
+Step  113 | reward: 0.0527 | signal: 0.41 | length: 64 | lr: 2.5751e-06 | norm: 0.1094 | dt: 10.5s
+113 reward 0.0527
+113 signal 0.4062
+113 length 64.1719
+Step  114 | reward: 0.0605 | signal: 0.34 | length: 66 | lr: 2.5536e-06 | norm: 0.1050 | dt: 10.1s
+114 reward 0.0605
+114 signal 0.3438
+114 length 66.4238
+Step  115 | reward: 0.0645 | signal: 0.25 | length: 68 | lr: 2.5322e-06 | norm: 0.0883 | dt: 9.8s
+115 reward 0.0645
+115 signal 0.2500
+115 length 68.3008
+Step  116 | reward: 0.0371 | signal: 0.34 | length: 70 | lr: 2.5107e-06 | norm: 0.1048 | dt: 9.8s
+116 reward 0.0371
+116 signal 0.3438
+116 length 69.9277
+Step  117 | reward: 0.0488 | signal: 0.31 | length: 68 | lr: 2.4893e-06 | norm: 0.1089 | dt: 8.8s
+117 reward 0.0488
+117 signal 0.3125
+117 length 67.8262
+Step  118 | reward: 0.0645 | signal: 0.34 | length: 66 | lr: 2.4678e-06 | norm: 0.1121 | dt: 9.3s
+118 reward 0.0645
+118 signal 0.3438
+118 length 65.7285
+Step  119 | reward: 0.0469 | signal: 0.41 | length: 69 | lr: 2.4464e-06 | norm: 0.1100 | dt: 10.5s
+119 reward 0.0469
+119 signal 0.4062
+119 length 69.2812
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+120 pass@1 0.0350
+120 pass@8 0.2150
+Step  120 | reward: 0.0840 | signal: 0.41 | length: 60 | lr: 2.4249e-06 | norm: 0.1275 | dt: 8.4s
+120 reward 0.0840
+120 signal 0.4062
+120 length 60.1543
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step  121 | reward: 0.0371 | signal: 0.25 | length: 67 | lr: 2.4034e-06 | norm: 0.0949 | dt: 10.2s
+121 reward 0.0371
+121 signal 0.2500
+121 length 67.2129
+Step  122 | reward: 0.0430 | signal: 0.28 | length: 69 | lr: 2.3820e-06 | norm: 0.0827 | dt: 10.5s
+122 reward 0.0430
+122 signal 0.2812
+122 length 68.8418
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step  123 | reward: 0.0469 | signal: 0.47 | length: 65 | lr: 2.3605e-06 | norm: 0.1277 | dt: 10.1s
+123 reward 0.0469
+123 signal 0.4688
+123 length 65.0430
+Step  124 | reward: 0.0605 | signal: 0.41 | length: 68 | lr: 2.3391e-06 | norm: 0.1097 | dt: 10.7s
+124 reward 0.0605
+124 signal 0.4062
+124 length 68.0117
+Step  125 | reward: 0.0508 | signal: 0.38 | length: 68 | lr: 2.3176e-06 | norm: 0.1225 | dt: 10.9s
+125 reward 0.0508
+125 signal 0.3750
+125 length 67.8262
+Step  126 | reward: 0.0469 | signal: 0.41 | length: 70 | lr: 2.2961e-06 | norm: 0.1024 | dt: 10.3s
+126 reward 0.0469
+126 signal 0.4062
+126 length 69.7344
+Step  127 | reward: 0.0762 | signal: 0.47 | length: 67 | lr: 2.2747e-06 | norm: 0.1215 | dt: 10.5s
+127 reward 0.0762
+127 signal 0.4688
+127 length 67.3477
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step  128 | reward: 0.0547 | signal: 0.44 | length: 66 | lr: 2.2532e-06 | norm: 0.1079 | dt: 9.1s
+128 reward 0.0547
+128 signal 0.4375
+128 length 66.1406
+Step  129 | reward: 0.0508 | signal: 0.34 | length: 65 | lr: 2.2318e-06 | norm: 0.0988 | dt: 11.0s
+129 reward 0.0508
+129 signal 0.3438
+129 length 65.2305
+Step  130 | reward: 0.0527 | signal: 0.50 | length: 65 | lr: 2.2103e-06 | norm: 0.1204 | dt: 10.7s
+130 reward 0.0527
+130 signal 0.5000
+130 length 65.1289
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step  131 | reward: 0.0762 | signal: 0.47 | length: 68 | lr: 2.1888e-06 | norm: 0.1209 | dt: 9.6s
+131 reward 0.0762
+131 signal 0.4688
+131 length 67.9824
+Step  132 | reward: 0.0195 | signal: 0.22 | length: 71 | lr: 2.1674e-06 | norm: 0.0613 | dt: 10.7s
+132 reward 0.0195
+132 signal 0.2188
+132 length 71.2773
+Step  133 | reward: 0.0469 | signal: 0.38 | length: 71 | lr: 2.1459e-06 | norm: 0.0851 | dt: 10.1s
+133 reward 0.0469
+133 signal 0.3750
+133 length 71.4160
+Step  134 | reward: 0.0762 | signal: 0.34 | length: 67 | lr: 2.1245e-06 | norm: 0.1090 | dt: 11.6s
+134 reward 0.0762
+134 signal 0.3438
+134 length 67.4258
+Step  135 | reward: 0.0391 | signal: 0.28 | length: 69 | lr: 2.1030e-06 | norm: 0.0974 | dt: 10.5s
+135 reward 0.0391
+135 signal 0.2812
+135 length 69.0469
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step  136 | reward: 0.0391 | signal: 0.28 | length: 68 | lr: 2.0815e-06 | norm: 0.1066 | dt: 10.7s
+136 reward 0.0391
+136 signal 0.2812
+136 length 68.0195
+Step  137 | reward: 0.0586 | signal: 0.41 | length: 68 | lr: 2.0601e-06 | norm: 0.1226 | dt: 9.5s
+137 reward 0.0586
+137 signal 0.4062
+137 length 67.8340
+Step  138 | reward: 0.0527 | signal: 0.34 | length: 68 | lr: 2.0386e-06 | norm: 0.0871 | dt: 11.6s
+138 reward 0.0527
+138 signal 0.3438
+138 length 67.7188
+Step  139 | reward: 0.0527 | signal: 0.31 | length: 69 | lr: 2.0172e-06 | norm: 0.1057 | dt: 10.4s
+139 reward 0.0527
+139 signal 0.3125
+139 length 68.8867
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step  140 | reward: 0.0684 | signal: 0.28 | length: 70 | lr: 1.9957e-06 | norm: 0.1013 | dt: 10.4s
+140 reward 0.0684
+140 signal 0.2812
+140 length 70.4531
+Step  141 | reward: 0.0547 | signal: 0.31 | length: 66 | lr: 1.9742e-06 | norm: 0.0970 | dt: 9.3s
+141 reward 0.0547
+141 signal 0.3125
+141 length 65.5684
+Step  142 | reward: 0.0566 | signal: 0.44 | length: 64 | lr: 1.9528e-06 | norm: 0.1134 | dt: 8.7s
+142 reward 0.0566
+142 signal 0.4375
+142 length 63.6992
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+<string>:1: SyntaxWarning: 'float' object is not callable; perhaps you missed a comma?
+Step  143 | reward: 0.0840 | signal: 0.38 | length: 71 | lr: 1.9313e-06 | norm: 0.1082 | dt: 10.5s
+143 reward 0.0840
+143 signal 0.3750
+143 length 70.9629
+Step  144 | reward: 0.0430 | signal: 0.28 | length: 69 | lr: 1.9099e-06 | norm: 0.1006 | dt: 10.3s
+144 reward 0.0430
+144 signal 0.2812
+144 length 69.0312
+Step  145 | reward: 0.0898 | signal: 0.47 | length: 68 | lr: 1.8884e-06 | norm: 0.1408 | dt: 10.0s
+145 reward 0.0898
+145 signal 0.4688
+145 length 68.2168
+Step  146 | reward: 0.0391 | signal: 0.31 | length: 70 | lr: 1.8670e-06 | norm: 0.1054 | dt: 9.8s
+146 reward 0.0391
+146 signal 0.3125
+146 length 69.8867
+Step  147 | reward: 0.0586 | signal: 0.34 | length: 71 | lr: 1.8455e-06 | norm: 0.1039 | dt: 10.1s
+147 reward 0.0586
+147 signal 0.3438
+147 length 70.5234
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step  148 | reward: 0.0391 | signal: 0.22 | length: 67 | lr: 1.8240e-06 | norm: 0.0789 | dt: 9.9s
+148 reward 0.0391
+148 signal 0.2188
+148 length 67.4219
+Step  149 | reward: 0.0918 | signal: 0.44 | length: 63 | lr: 1.8026e-06 | norm: 0.1360 | dt: 9.2s
+149 reward 0.0918
+149 signal 0.4375
+149 length 62.7539
+Step  150 | reward: 0.0547 | signal: 0.34 | length: 66 | lr: 1.7811e-06 | norm: 0.1052 | dt: 9.4s
+150 reward 0.0547
+150 signal 0.3438
+150 length 65.5703
+Step  151 | reward: 0.0410 | signal: 0.31 | length: 71 | lr: 1.7597e-06 | norm: 0.1019 | dt: 11.1s
+151 reward 0.0410
+151 signal 0.3125
+151 length 70.9668
+Step  152 | reward: 0.0410 | signal: 0.41 | length: 66 | lr: 1.7382e-06 | norm: 0.1069 | dt: 9.5s
+152 reward 0.0410
+152 signal 0.4062
+152 length 65.9121
+Step  153 | reward: 0.0234 | signal: 0.28 | length: 73 | lr: 1.7167e-06 | norm: 0.0679 | dt: 11.3s
+153 reward 0.0234
+153 signal 0.2812
+153 length 72.7090
+Step  154 | reward: 0.0488 | signal: 0.38 | length: 68 | lr: 1.6953e-06 | norm: 0.1088 | dt: 9.9s
+154 reward 0.0488
+154 signal 0.3750
+154 length 67.6191
+Step  155 | reward: 0.1289 | signal: 0.50 | length: 64 | lr: 1.6738e-06 | norm: 0.1105 | dt: 9.0s
+155 reward 0.1289
+155 signal 0.5000
+155 length 64.4043
+Step  156 | reward: 0.0703 | signal: 0.25 | length: 64 | lr: 1.6524e-06 | norm: 0.0931 | dt: 8.8s
+156 reward 0.0703
+156 signal 0.2500
+156 length 64.2402
+Step  157 | reward: 0.0410 | signal: 0.31 | length: 68 | lr: 1.6309e-06 | norm: 0.0923 | dt: 9.4s
+157 reward 0.0410
+157 signal 0.3125
+157 length 68.1191
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step  158 | reward: 0.0664 | signal: 0.44 | length: 69 | lr: 1.6094e-06 | norm: 0.1188 | dt: 9.5s
+158 reward 0.0664
+158 signal 0.4375
+158 length 68.7734
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step  159 | reward: 0.0664 | signal: 0.38 | length: 67 | lr: 1.5880e-06 | norm: 0.0984 | dt: 9.4s
+159 reward 0.0664
+159 signal 0.3750
+159 length 67.2500
+Step  160 | reward: 0.0176 | signal: 0.25 | length: 70 | lr: 1.5665e-06 | norm: 0.0782 | dt: 9.7s
+160 reward 0.0176
+160 signal 0.2500
+160 length 69.5098
+Step  161 | reward: 0.0488 | signal: 0.34 | length: 68 | lr: 1.5451e-06 | norm: 0.0944 | dt: 9.5s
+161 reward 0.0488
+161 signal 0.3438
+161 length 68.4180
+Step  162 | reward: 0.0176 | signal: 0.16 | length: 70 | lr: 1.5236e-06 | norm: 0.0652 | dt: 9.0s
+162 reward 0.0176
+162 signal 0.1562
+162 length 69.6113
+Step  163 | reward: 0.0332 | signal: 0.28 | length: 69 | lr: 1.5021e-06 | norm: 0.0891 | dt: 10.9s
+163 reward 0.0332
+163 signal 0.2812
+163 length 69.2090
+Step  164 | reward: 0.0527 | signal: 0.41 | length: 67 | lr: 1.4807e-06 | norm: 0.1112 | dt: 10.1s
+164 reward 0.0527
+164 signal 0.4062
+164 length 66.7949
+Step  165 | reward: 0.0762 | signal: 0.44 | length: 68 | lr: 1.4592e-06 | norm: 0.1185 | dt: 9.6s
+165 reward 0.0762
+165 signal 0.4375
+165 length 67.5488
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step  166 | reward: 0.0449 | signal: 0.34 | length: 68 | lr: 1.4378e-06 | norm: 0.1089 | dt: 11.2s
+166 reward 0.0449
+166 signal 0.3438
+166 length 68.3184
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step  167 | reward: 0.0527 | signal: 0.44 | length: 64 | lr: 1.4163e-06 | norm: 0.1053 | dt: 9.2s
+167 reward 0.0527
+167 signal 0.4375
+167 length 63.6895
+Step  168 | reward: 0.0781 | signal: 0.44 | length: 67 | lr: 1.3948e-06 | norm: 0.1160 | dt: 10.0s
+168 reward 0.0781
+168 signal 0.4375
+168 length 67.1426
+Step  169 | reward: 0.0801 | signal: 0.53 | length: 65 | lr: 1.3734e-06 | norm: 0.1276 | dt: 9.4s
+169 reward 0.0801
+169 signal 0.5312
+169 length 64.8984
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step  170 | reward: 0.0508 | signal: 0.31 | length: 67 | lr: 1.3519e-06 | norm: 0.1017 | dt: 9.5s
+170 reward 0.0508
+170 signal 0.3125
+170 length 67.4824
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step  171 | reward: 0.0625 | signal: 0.31 | length: 71 | lr: 1.3305e-06 | norm: 0.0973 | dt: 9.9s
+171 reward 0.0625
+171 signal 0.3125
+171 length 70.9980
+Step  172 | reward: 0.0723 | signal: 0.53 | length: 67 | lr: 1.3090e-06 | norm: 0.1409 | dt: 9.7s
+172 reward 0.0723
+172 signal 0.5312
+172 length 67.4004
+Step  173 | reward: 0.0254 | signal: 0.25 | length: 66 | lr: 1.2876e-06 | norm: 0.0901 | dt: 9.5s
+173 reward 0.0254
+173 signal 0.2500
+173 length 65.7266
+Step  174 | reward: 0.0820 | signal: 0.53 | length: 67 | lr: 1.2661e-06 | norm: 0.1243 | dt: 10.0s
+174 reward 0.0820
+174 signal 0.5312
+174 length 67.3711
+Step  175 | reward: 0.0430 | signal: 0.31 | length: 68 | lr: 1.2446e-06 | norm: 0.1175 | dt: 10.5s
+175 reward 0.0430
+175 signal 0.3125
+175 length 68.1113
+Step  176 | reward: 0.0332 | signal: 0.31 | length: 69 | lr: 1.2232e-06 | norm: 0.1076 | dt: 9.9s
+176 reward 0.0332
+176 signal 0.3125
+176 length 68.8086
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step  177 | reward: 0.0801 | signal: 0.47 | length: 69 | lr: 1.2017e-06 | norm: 0.1249 | dt: 9.0s
+177 reward 0.0801
+177 signal 0.4688
+177 length 68.5938
+Step  178 | reward: 0.0625 | signal: 0.38 | length: 65 | lr: 1.1803e-06 | norm: 0.1200 | dt: 9.4s
+178 reward 0.0625
+178 signal 0.3750
+178 length 65.2637
+Step  179 | reward: 0.0488 | signal: 0.34 | length: 66 | lr: 1.1588e-06 | norm: 0.1179 | dt: 8.9s
+179 reward 0.0488
+179 signal 0.3438
+179 length 65.9629
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+<string>:1: SyntaxWarning: 'float' object is not callable; perhaps you missed a comma?
+<string>:1: SyntaxWarning: 'float' object is not callable; perhaps you missed a comma?
+<string>:1: SyntaxWarning: 'float' object is not callable; perhaps you missed a comma?
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+180 pass@1 0.0450
+180 pass@8 0.2300
+Step  180 | reward: 0.0625 | signal: 0.47 | length: 67 | lr: 1.1373e-06 | norm: 0.1187 | dt: 9.1s
+180 reward 0.0625
+180 signal 0.4688
+180 length 66.6836
+Step  181 | reward: 0.0430 | signal: 0.34 | length: 66 | lr: 1.1159e-06 | norm: 0.0960 | dt: 10.0s
+181 reward 0.0430
+181 signal 0.3438
+181 length 66.4941
+Step  182 | reward: 0.0742 | signal: 0.28 | length: 69 | lr: 1.0944e-06 | norm: 0.1044 | dt: 10.7s
+182 reward 0.0742
+182 signal 0.2812
+182 length 69.2266
+<string>:1: SyntaxWarning: 'float' object is not callable; perhaps you missed a comma?
+Step  183 | reward: 0.0586 | signal: 0.31 | length: 69 | lr: 1.0730e-06 | norm: 0.1120 | dt: 10.0s
+183 reward 0.0586
+183 signal 0.3125
+183 length 69.0469
+Step  184 | reward: 0.0430 | signal: 0.38 | length: 68 | lr: 1.0515e-06 | norm: 0.1114 | dt: 10.7s
+184 reward 0.0430
+184 signal 0.3750
+184 length 67.7969
+Step  185 | reward: 0.0801 | signal: 0.44 | length: 69 | lr: 1.0300e-06 | norm: 0.1098 | dt: 10.4s
+185 reward 0.0801
+185 signal 0.4375
+185 length 68.7637
+Step  186 | reward: 0.0312 | signal: 0.25 | length: 66 | lr: 1.0086e-06 | norm: 0.0731 | dt: 10.0s
+186 reward 0.0312
+186 signal 0.2500
+186 length 66.1992
+Step  187 | reward: 0.0840 | signal: 0.53 | length: 64 | lr: 9.8712e-07 | norm: 0.1315 | dt: 8.8s
+187 reward 0.0840
+187 signal 0.5312
+187 length 63.8633
+Step  188 | reward: 0.0645 | signal: 0.34 | length: 67 | lr: 9.6567e-07 | norm: 0.1000 | dt: 9.1s
+188 reward 0.0645
+188 signal 0.3438
+188 length 67.1230
+Step  189 | reward: 0.0645 | signal: 0.34 | length: 68 | lr: 9.4421e-07 | norm: 0.1075 | dt: 10.8s
+189 reward 0.0645
+189 signal 0.3438
+189 length 67.6484
+Step  190 | reward: 0.0723 | signal: 0.50 | length: 61 | lr: 9.2275e-07 | norm: 0.1359 | dt: 7.9s
+190 reward 0.0723
+190 signal 0.5000
+190 length 61.3965
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step  191 | reward: 0.0449 | signal: 0.31 | length: 68 | lr: 9.0129e-07 | norm: 0.0839 | dt: 10.0s
+191 reward 0.0449
+191 signal 0.3125
+191 length 67.6875
+Step  192 | reward: 0.0664 | signal: 0.50 | length: 68 | lr: 8.7983e-07 | norm: 0.1231 | dt: 9.9s
+192 reward 0.0664
+192 signal 0.5000
+192 length 68.2559
+Step  193 | reward: 0.0801 | signal: 0.31 | length: 68 | lr: 8.5837e-07 | norm: 0.1160 | dt: 9.8s
+193 reward 0.0801
+193 signal 0.3125
+193 length 68.0996
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step  194 | reward: 0.0605 | signal: 0.44 | length: 65 | lr: 8.3691e-07 | norm: 0.1271 | dt: 9.9s
+194 reward 0.0605
+194 signal 0.4375
+194 length 64.6602
+Step  195 | reward: 0.0527 | signal: 0.41 | length: 67 | lr: 8.1545e-07 | norm: 0.0965 | dt: 9.6s
+195 reward 0.0527
+195 signal 0.4062
+195 length 66.8730
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step  196 | reward: 0.0820 | signal: 0.44 | length: 72 | lr: 7.9399e-07 | norm: 0.1206 | dt: 11.4s
+196 reward 0.0820
+196 signal 0.4375
+196 length 71.7168
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step  197 | reward: 0.0371 | signal: 0.31 | length: 69 | lr: 7.7253e-07 | norm: 0.0965 | dt: 10.1s
+197 reward 0.0371
+197 signal 0.3125
+197 length 68.9863
+Step  198 | reward: 0.0684 | signal: 0.38 | length: 66 | lr: 7.5107e-07 | norm: 0.1107 | dt: 10.1s
+198 reward 0.0684
+198 signal 0.3750
+198 length 65.8320
+Step  199 | reward: 0.0469 | signal: 0.34 | length: 71 | lr: 7.2961e-07 | norm: 0.1020 | dt: 11.8s
+199 reward 0.0469
+199 signal 0.3438
+199 length 70.5098
+Step  200 | reward: 0.0820 | signal: 0.50 | length: 62 | lr: 7.0815e-07 | norm: 0.1300 | dt: 8.2s
+200 reward 0.0820
+200 signal 0.5000
+200 length 62.1426
+Step  201 | reward: 0.0723 | signal: 0.31 | length: 65 | lr: 6.8670e-07 | norm: 0.1158 | dt: 9.3s
+201 reward 0.0723
+201 signal 0.3125
+201 length 65.4238
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step  202 | reward: 0.0820 | signal: 0.50 | length: 68 | lr: 6.6524e-07 | norm: 0.1377 | dt: 9.9s
+202 reward 0.0820
+202 signal 0.5000
+202 length 67.7109
+Step  203 | reward: 0.0449 | signal: 0.25 | length: 68 | lr: 6.4378e-07 | norm: 0.0936 | dt: 9.7s
+203 reward 0.0449
+203 signal 0.2500
+203 length 68.4434
+Step  204 | reward: 0.0781 | signal: 0.34 | length: 65 | lr: 6.2232e-07 | norm: 0.1003 | dt: 10.6s
+204 reward 0.0781
+204 signal 0.3438
+204 length 64.8164
+Step  205 | reward: 0.0430 | signal: 0.25 | length: 69 | lr: 6.0086e-07 | norm: 0.0994 | dt: 10.3s
+205 reward 0.0430
+205 signal 0.2500
+205 length 68.9727
+Step  206 | reward: 0.0586 | signal: 0.44 | length: 66 | lr: 5.7940e-07 | norm: 0.1202 | dt: 9.0s
+206 reward 0.0586
+206 signal 0.4375
+206 length 65.8164
+Step  207 | reward: 0.0527 | signal: 0.31 | length: 61 | lr: 5.5794e-07 | norm: 0.0965 | dt: 7.7s
+207 reward 0.0527
+207 signal 0.3125
+207 length 60.5273
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step  208 | reward: 0.0879 | signal: 0.50 | length: 69 | lr: 5.3648e-07 | norm: 0.1093 | dt: 9.7s
+208 reward 0.0879
+208 signal 0.5000
+208 length 68.9336
+Step  209 | reward: 0.0215 | signal: 0.16 | length: 74 | lr: 5.1502e-07 | norm: 0.0722 | dt: 11.3s
+209 reward 0.0215
+209 signal 0.1562
+209 length 73.5391
+Step  210 | reward: 0.0605 | signal: 0.38 | length: 64 | lr: 4.9356e-07 | norm: 0.1262 | dt: 8.5s
+210 reward 0.0605
+210 signal 0.3750
+210 length 64.0117
+Step  211 | reward: 0.0703 | signal: 0.31 | length: 70 | lr: 4.7210e-07 | norm: 0.0995 | dt: 10.2s
+211 reward 0.0703
+211 signal 0.3125
+211 length 70.3359
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step  212 | reward: 0.0840 | signal: 0.38 | length: 64 | lr: 4.5064e-07 | norm: 0.1203 | dt: 10.9s
+212 reward 0.0840
+212 signal 0.3750
+212 length 64.0859
+Step  213 | reward: 0.0449 | signal: 0.41 | length: 67 | lr: 4.2918e-07 | norm: 0.1263 | dt: 9.4s
+213 reward 0.0449
+213 signal 0.4062
+213 length 67.1074
+Step  214 | reward: 0.0781 | signal: 0.38 | length: 61 | lr: 4.0773e-07 | norm: 0.1289 | dt: 8.0s
+214 reward 0.0781
+214 signal 0.3750
+214 length 60.8750
+<string>:1: SyntaxWarning: 'float' object is not callable; perhaps you missed a comma?
+Step  215 | reward: 0.0527 | signal: 0.16 | length: 65 | lr: 3.8627e-07 | norm: 0.0696 | dt: 9.0s
+215 reward 0.0527
+215 signal 0.1562
+215 length 65.4102
+Step  216 | reward: 0.0762 | signal: 0.41 | length: 66 | lr: 3.6481e-07 | norm: 0.1115 | dt: 9.6s
+216 reward 0.0762
+216 signal 0.4062
+216 length 65.9473
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step  217 | reward: 0.0488 | signal: 0.38 | length: 68 | lr: 3.4335e-07 | norm: 0.1028 | dt: 10.1s
+217 reward 0.0488
+217 signal 0.3750
+217 length 68.4648
+Step  218 | reward: 0.0742 | signal: 0.44 | length: 69 | lr: 3.2189e-07 | norm: 0.1324 | dt: 9.7s
+218 reward 0.0742
+218 signal 0.4375
+218 length 68.8027
+Step  219 | reward: 0.0449 | signal: 0.34 | length: 65 | lr: 3.0043e-07 | norm: 0.1093 | dt: 8.8s
+219 reward 0.0449
+219 signal 0.3438
+219 length 64.9922
+Step  220 | reward: 0.0820 | signal: 0.41 | length: 65 | lr: 2.7897e-07 | norm: 0.1363 | dt: 9.3s
+220 reward 0.0820
+220 signal 0.4062
+220 length 65.1074
+Step  221 | reward: 0.0527 | signal: 0.41 | length: 63 | lr: 2.5751e-07 | norm: 0.0997 | dt: 8.9s
+221 reward 0.0527
+221 signal 0.4062
+221 length 63.3926
+Step  222 | reward: 0.0508 | signal: 0.41 | length: 63 | lr: 2.3605e-07 | norm: 0.1207 | dt: 8.7s
+222 reward 0.0508
+222 signal 0.4062
+222 length 63.3125
+Step  223 | reward: 0.0742 | signal: 0.50 | length: 70 | lr: 2.1459e-07 | norm: 0.1236 | dt: 10.3s
+223 reward 0.0742
+223 signal 0.5000
+223 length 69.8984
+Step  224 | reward: 0.0781 | signal: 0.34 | length: 65 | lr: 1.9313e-07 | norm: 0.1130 | dt: 9.4s
+224 reward 0.0781
+224 signal 0.3438
+224 length 65.2598
+Step  225 | reward: 0.0605 | signal: 0.41 | length: 62 | lr: 1.7167e-07 | norm: 0.1245 | dt: 8.3s
+225 reward 0.0605
+225 signal 0.4062
+225 length 62.0410
+Step  226 | reward: 0.0449 | signal: 0.34 | length: 67 | lr: 1.5021e-07 | norm: 0.0976 | dt: 9.2s
+226 reward 0.0449
+226 signal 0.3438
+226 length 66.8789
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step  227 | reward: 0.0430 | signal: 0.34 | length: 64 | lr: 1.2876e-07 | norm: 0.1343 | dt: 9.2s
+227 reward 0.0430
+227 signal 0.3438
+227 length 64.3418
+Step  228 | reward: 0.0508 | signal: 0.28 | length: 64 | lr: 1.0730e-07 | norm: 0.1007 | dt: 9.0s
+228 reward 0.0508
+228 signal 0.2812
+228 length 64.2930
+Step  229 | reward: 0.0488 | signal: 0.38 | length: 67 | lr: 8.5837e-08 | norm: 0.1064 | dt: 9.6s
+229 reward 0.0488
+229 signal 0.3750
+229 length 67.1016
+Step  230 | reward: 0.0527 | signal: 0.25 | length: 64 | lr: 6.4378e-08 | norm: 0.0872 | dt: 8.8s
+230 reward 0.0527
+230 signal 0.2500
+230 length 64.0098
+Step  231 | reward: 0.0898 | signal: 0.47 | length: 63 | lr: 4.2918e-08 | norm: 0.1259 | dt: 9.2s
+231 reward 0.0898
+231 signal 0.4688
+231 length 62.9766
+Step  232 | reward: 0.0469 | signal: 0.31 | length: 63 | lr: 2.1459e-08 | norm: 0.0938 | dt: 8.2s
+232 reward 0.0469
+232 signal 0.3125
+232 length 63.0527
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+233 pass@1 0.0450
+233 pass@8 0.2550

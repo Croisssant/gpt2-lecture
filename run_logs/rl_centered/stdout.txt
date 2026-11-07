@@ -1,0 +1,422 @@
+using device: cuda
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+num decayed parameter tensors: 50, with 124,354,560 parameters
+num non-decayed parameter tensors: 98, with 121,344 parameters
+using fused AdamW: True
+0 pass@1 0.0100
+0 pass@8 0.1200
+Step    0 | reward: 0.0117 | signal: 0.19 | lr: 3.0000e-05 | norm: 0.0508 | dt: 104.4s
+0 reward 0.0117
+0 signal 0.1875
+Step    1 | reward: 0.0039 | signal: 0.06 | lr: 2.9936e-05 | norm: 0.0434 | dt: 9.6s
+1 reward 0.0039
+1 signal 0.0625
+Step    2 | reward: 0.0273 | signal: 0.44 | lr: 2.9872e-05 | norm: 0.1257 | dt: 11.4s
+2 reward 0.0273
+2 signal 0.4375
+Step    3 | reward: 0.0547 | signal: 0.38 | lr: 2.9807e-05 | norm: 0.1423 | dt: 13.4s
+3 reward 0.0547
+3 signal 0.3750
+Step    4 | reward: 0.0156 | signal: 0.12 | lr: 2.9743e-05 | norm: 0.0918 | dt: 9.2s
+4 reward 0.0156
+4 signal 0.1250
+Step    5 | reward: 0.0117 | signal: 0.19 | lr: 2.9679e-05 | norm: 0.0925 | dt: 10.7s
+5 reward 0.0117
+5 signal 0.1875
+Step    6 | reward: 0.0195 | signal: 0.25 | lr: 2.9615e-05 | norm: 0.1434 | dt: 9.1s
+6 reward 0.0195
+6 signal 0.2500
+Step    7 | reward: 0.0195 | signal: 0.19 | lr: 2.9550e-05 | norm: 0.1354 | dt: 11.9s
+7 reward 0.0195
+7 signal 0.1875
+Step    8 | reward: 0.0312 | signal: 0.44 | lr: 2.9486e-05 | norm: 0.1475 | dt: 20.9s
+8 reward 0.0312
+8 signal 0.4375
+Step    9 | reward: 0.0078 | signal: 0.06 | lr: 2.9422e-05 | norm: 0.0692 | dt: 7.3s
+9 reward 0.0078
+9 signal 0.0625
+Step   10 | reward: 0.0195 | signal: 0.19 | lr: 2.9358e-05 | norm: 0.1137 | dt: 11.8s
+10 reward 0.0195
+10 signal 0.1875
+Step   11 | reward: 0.0156 | signal: 0.19 | lr: 2.9293e-05 | norm: 0.1108 | dt: 11.7s
+11 reward 0.0156
+11 signal 0.1875
+Step   12 | reward: 0.0312 | signal: 0.25 | lr: 2.9229e-05 | norm: 0.1387 | dt: 11.7s
+12 reward 0.0312
+12 signal 0.2500
+Step   13 | reward: 0.0117 | signal: 0.19 | lr: 2.9165e-05 | norm: 0.1327 | dt: 10.5s
+13 reward 0.0117
+13 signal 0.1875
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step   14 | reward: 0.0312 | signal: 0.25 | lr: 2.9101e-05 | norm: 0.1468 | dt: 11.5s
+14 reward 0.0312
+14 signal 0.2500
+Step   15 | reward: 0.0039 | signal: 0.06 | lr: 2.9036e-05 | norm: 0.0348 | dt: 8.1s
+15 reward 0.0039
+15 signal 0.0625
+Step   16 | reward: 0.0078 | signal: 0.06 | lr: 2.8972e-05 | norm: 0.0831 | dt: 10.0s
+16 reward 0.0078
+16 signal 0.0625
+<string>:1: SyntaxWarning: 'int' object is not callable; perhaps you missed a comma?
+Step   17 | reward: 0.0156 | signal: 0.25 | lr: 2.8908e-05 | norm: 0.1055 | dt: 10.2s
+17 reward 0.0156
+17 signal 0.2500
+Step   18 | reward: 0.0195 | signal: 0.31 | lr: 2.8844e-05 | norm: 0.1528 | dt: 9.8s
+18 reward 0.0195
+18 signal 0.3125
+Step   19 | reward: 0.0234 | signal: 0.25 | lr: 2.8779e-05 | norm: 0.1797 | dt: 8.6s
+19 reward 0.0234
+19 signal 0.2500
+Step   20 | reward: 0.0234 | signal: 0.31 | lr: 2.8715e-05 | norm: 0.1438 | dt: 12.8s
+20 reward 0.0234
+20 signal 0.3125
+Step   21 | reward: 0.0156 | signal: 0.25 | lr: 2.8651e-05 | norm: 0.1832 | dt: 11.3s
+21 reward 0.0156
+21 signal 0.2500
+Step   22 | reward: 0.0078 | signal: 0.12 | lr: 2.8587e-05 | norm: 0.1593 | dt: 7.9s
+22 reward 0.0078
+22 signal 0.1250
+Step   23 | reward: 0.0234 | signal: 0.19 | lr: 2.8522e-05 | norm: 0.2231 | dt: 8.6s
+23 reward 0.0234
+23 signal 0.1875
+Step   24 | reward: 0.0039 | signal: 0.06 | lr: 2.8458e-05 | norm: 0.0777 | dt: 7.4s
+24 reward 0.0039
+24 signal 0.0625
+Step   25 | reward: 0.0039 | signal: 0.06 | lr: 2.8394e-05 | norm: 0.0763 | dt: 12.3s
+25 reward 0.0039
+25 signal 0.0625
+Step   26 | reward: 0.0352 | signal: 0.25 | lr: 2.8330e-05 | norm: 0.2329 | dt: 10.1s
+26 reward 0.0352
+26 signal 0.2500
+Step   27 | reward: 0.0195 | signal: 0.19 | lr: 2.8266e-05 | norm: 0.1539 | dt: 10.3s
+27 reward 0.0195
+27 signal 0.1875
+Step   28 | reward: 0.0195 | signal: 0.25 | lr: 2.8201e-05 | norm: 0.1956 | dt: 12.7s
+28 reward 0.0195
+28 signal 0.2500
+Step   29 | reward: 0.0195 | signal: 0.12 | lr: 2.8137e-05 | norm: 0.1796 | dt: 10.4s
+29 reward 0.0195
+29 signal 0.1250
+Step   30 | reward: 0.0039 | signal: 0.06 | lr: 2.8073e-05 | norm: 0.0291 | dt: 10.8s
+30 reward 0.0039
+30 signal 0.0625
+Step   31 | reward: 0.0000 | signal: 0.00 | lr: 2.8009e-05 | norm: 0.0000 | dt: 10.5s
+31 reward 0.0000
+31 signal 0.0000
+Step   32 | reward: 0.0117 | signal: 0.12 | lr: 2.7944e-05 | norm: 0.1590 | dt: 12.0s
+32 reward 0.0117
+32 signal 0.1250
+Step   33 | reward: 0.0039 | signal: 0.06 | lr: 2.7880e-05 | norm: 0.0726 | dt: 11.3s
+33 reward 0.0039
+33 signal 0.0625
+Step   34 | reward: 0.0078 | signal: 0.06 | lr: 2.7816e-05 | norm: 0.0968 | dt: 10.9s
+34 reward 0.0078
+34 signal 0.0625
+Step   35 | reward: 0.0156 | signal: 0.12 | lr: 2.7752e-05 | norm: 0.1363 | dt: 13.4s
+35 reward 0.0156
+35 signal 0.1250
+Step   36 | reward: 0.0195 | signal: 0.12 | lr: 2.7687e-05 | norm: 0.1181 | dt: 12.2s
+36 reward 0.0195
+36 signal 0.1250
+Step   37 | reward: 0.0430 | signal: 0.31 | lr: 2.7623e-05 | norm: 0.2105 | dt: 14.3s
+37 reward 0.0430
+37 signal 0.3125
+Step   38 | reward: 0.0078 | signal: 0.12 | lr: 2.7559e-05 | norm: 0.0450 | dt: 14.4s
+38 reward 0.0078
+38 signal 0.1250
+Step   39 | reward: 0.0625 | signal: 0.38 | lr: 2.7495e-05 | norm: 0.2058 | dt: 16.6s
+39 reward 0.0625
+39 signal 0.3750
+Step   40 | reward: 0.0000 | signal: 0.00 | lr: 2.7430e-05 | norm: 0.0000 | dt: 13.6s
+40 reward 0.0000
+40 signal 0.0000
+Step   41 | reward: 0.0195 | signal: 0.25 | lr: 2.7366e-05 | norm: 0.0857 | dt: 14.4s
+41 reward 0.0195
+41 signal 0.2500
+Step   42 | reward: 0.0625 | signal: 0.19 | lr: 2.7302e-05 | norm: 0.1578 | dt: 10.8s
+42 reward 0.0625
+42 signal 0.1875
+Step   43 | reward: 0.0195 | signal: 0.12 | lr: 2.7238e-05 | norm: 0.1114 | dt: 14.5s
+43 reward 0.0195
+43 signal 0.1250
+Step   44 | reward: 0.0039 | signal: 0.06 | lr: 2.7173e-05 | norm: 0.0623 | dt: 12.7s
+44 reward 0.0039
+44 signal 0.0625
+Step   45 | reward: 0.0000 | signal: 0.00 | lr: 2.7109e-05 | norm: 0.0000 | dt: 14.2s
+45 reward 0.0000
+45 signal 0.0000
+Step   46 | reward: 0.0273 | signal: 0.12 | lr: 2.7045e-05 | norm: 0.1915 | dt: 21.3s
+46 reward 0.0273
+46 signal 0.1250
+Step   47 | reward: 0.0234 | signal: 0.12 | lr: 2.6981e-05 | norm: 0.1468 | dt: 13.9s
+47 reward 0.0234
+47 signal 0.1250
+Step   48 | reward: 0.0078 | signal: 0.12 | lr: 2.6916e-05 | norm: 0.0770 | dt: 12.9s
+48 reward 0.0078
+48 signal 0.1250
+Step   49 | reward: 0.0039 | signal: 0.06 | lr: 2.6852e-05 | norm: 0.0925 | dt: 13.4s
+49 reward 0.0039
+49 signal 0.0625
+Step   50 | reward: 0.0117 | signal: 0.12 | lr: 2.6788e-05 | norm: 0.0775 | dt: 13.3s
+50 reward 0.0117
+50 signal 0.1250
+Step   51 | reward: 0.0508 | signal: 0.12 | lr: 2.6724e-05 | norm: 0.1691 | dt: 13.3s
+51 reward 0.0508
+51 signal 0.1250
+Step   52 | reward: 0.0039 | signal: 0.06 | lr: 2.6660e-05 | norm: 0.0439 | dt: 12.2s
+52 reward 0.0039
+52 signal 0.0625
+Step   53 | reward: 0.0039 | signal: 0.06 | lr: 2.6595e-05 | norm: 0.0519 | dt: 13.8s
+53 reward 0.0039
+53 signal 0.0625
+Step   54 | reward: 0.0039 | signal: 0.06 | lr: 2.6531e-05 | norm: 0.0537 | dt: 12.1s
+54 reward 0.0039
+54 signal 0.0625
+Step   55 | reward: 0.0195 | signal: 0.25 | lr: 2.6467e-05 | norm: 0.1187 | dt: 14.9s
+55 reward 0.0195
+55 signal 0.2500
+Step   56 | reward: 0.0391 | signal: 0.19 | lr: 2.6403e-05 | norm: 0.1341 | dt: 13.2s
+56 reward 0.0391
+56 signal 0.1875
+Step   57 | reward: 0.0078 | signal: 0.12 | lr: 2.6338e-05 | norm: 0.1537 | dt: 14.3s
+57 reward 0.0078
+57 signal 0.1250
+Step   58 | reward: 0.0039 | signal: 0.06 | lr: 2.6274e-05 | norm: 0.0766 | dt: 14.2s
+58 reward 0.0039
+58 signal 0.0625
+Step   59 | reward: 0.0000 | signal: 0.00 | lr: 2.6210e-05 | norm: 0.0000 | dt: 12.2s
+59 reward 0.0000
+59 signal 0.0000
+60 pass@1 0.0100
+60 pass@8 0.0750
+Step   60 | reward: 0.0117 | signal: 0.12 | lr: 2.6146e-05 | norm: 0.0894 | dt: 13.6s
+60 reward 0.0117
+60 signal 0.1250
+Step   61 | reward: 0.0273 | signal: 0.25 | lr: 2.6081e-05 | norm: 0.1518 | dt: 13.5s
+61 reward 0.0273
+61 signal 0.2500
+Step   62 | reward: 0.0195 | signal: 0.19 | lr: 2.6017e-05 | norm: 0.1364 | dt: 14.2s
+62 reward 0.0195
+62 signal 0.1875
+Step   63 | reward: 0.0625 | signal: 0.12 | lr: 2.5953e-05 | norm: 0.2194 | dt: 12.4s
+63 reward 0.0625
+63 signal 0.1250
+Step   64 | reward: 0.0156 | signal: 0.19 | lr: 2.5889e-05 | norm: 0.1341 | dt: 15.1s
+64 reward 0.0156
+64 signal 0.1875
+Step   65 | reward: 0.0391 | signal: 0.25 | lr: 2.5824e-05 | norm: 0.1983 | dt: 15.3s
+65 reward 0.0391
+65 signal 0.2500
+Step   66 | reward: 0.0117 | signal: 0.12 | lr: 2.5760e-05 | norm: 0.1434 | dt: 13.7s
+66 reward 0.0117
+66 signal 0.1250
+Step   67 | reward: 0.0469 | signal: 0.12 | lr: 2.5696e-05 | norm: 0.1936 | dt: 13.9s
+67 reward 0.0469
+67 signal 0.1250
+Step   68 | reward: 0.0117 | signal: 0.06 | lr: 2.5632e-05 | norm: 0.1171 | dt: 14.6s
+68 reward 0.0117
+68 signal 0.0625
+Step   69 | reward: 0.0156 | signal: 0.12 | lr: 2.5567e-05 | norm: 0.1304 | dt: 11.8s
+69 reward 0.0156
+69 signal 0.1250
+Step   70 | reward: 0.0039 | signal: 0.06 | lr: 2.5503e-05 | norm: 0.0765 | dt: 12.8s
+70 reward 0.0039
+70 signal 0.0625
+Step   71 | reward: 0.0273 | signal: 0.25 | lr: 2.5439e-05 | norm: 0.2245 | dt: 13.1s
+71 reward 0.0273
+71 signal 0.2500
+Step   72 | reward: 0.0117 | signal: 0.19 | lr: 2.5375e-05 | norm: 0.1563 | dt: 11.3s
+72 reward 0.0117
+72 signal 0.1875
+Step   73 | reward: 0.0469 | signal: 0.19 | lr: 2.5310e-05 | norm: 0.2745 | dt: 13.5s
+73 reward 0.0469
+73 signal 0.1875
+Step   74 | reward: 0.0156 | signal: 0.19 | lr: 2.5246e-05 | norm: 0.2293 | dt: 13.7s
+74 reward 0.0156
+74 signal 0.1875
+Step   75 | reward: 0.0078 | signal: 0.12 | lr: 2.5182e-05 | norm: 0.1348 | dt: 11.3s
+75 reward 0.0078
+75 signal 0.1250
+Step   76 | reward: 0.0117 | signal: 0.12 | lr: 2.5118e-05 | norm: 0.1461 | dt: 15.5s
+76 reward 0.0117
+76 signal 0.1250
+Step   77 | reward: 0.0000 | signal: 0.00 | lr: 2.5054e-05 | norm: 0.0000 | dt: 11.5s
+77 reward 0.0000
+77 signal 0.0000
+Step   78 | reward: 0.0117 | signal: 0.12 | lr: 2.4989e-05 | norm: 0.1295 | dt: 14.6s
+78 reward 0.0117
+78 signal 0.1250
+Step   79 | reward: 0.0117 | signal: 0.12 | lr: 2.4925e-05 | norm: 0.1697 | dt: 13.3s
+79 reward 0.0117
+79 signal 0.1250
+Step   80 | reward: 0.0234 | signal: 0.12 | lr: 2.4861e-05 | norm: 0.1939 | dt: 14.5s
+80 reward 0.0234
+80 signal 0.1250
+Step   81 | reward: 0.0117 | signal: 0.06 | lr: 2.4797e-05 | norm: 0.1705 | dt: 14.0s
+81 reward 0.0117
+81 signal 0.0625
+Step   82 | reward: 0.0039 | signal: 0.06 | lr: 2.4732e-05 | norm: 0.0301 | dt: 12.3s
+82 reward 0.0039
+82 signal 0.0625
+Step   83 | reward: 0.0391 | signal: 0.12 | lr: 2.4668e-05 | norm: 0.3892 | dt: 13.6s
+83 reward 0.0391
+83 signal 0.1250
+Step   84 | reward: 0.0039 | signal: 0.06 | lr: 2.4604e-05 | norm: 0.0640 | dt: 12.9s
+84 reward 0.0039
+84 signal 0.0625
+Step   85 | reward: 0.0117 | signal: 0.12 | lr: 2.4540e-05 | norm: 0.2018 | dt: 13.3s
+85 reward 0.0117
+85 signal 0.1250
+Step   86 | reward: 0.0117 | signal: 0.06 | lr: 2.4475e-05 | norm: 0.1420 | dt: 12.4s
+86 reward 0.0117
+86 signal 0.0625
+Step   87 | reward: 0.0039 | signal: 0.06 | lr: 2.4411e-05 | norm: 0.0925 | dt: 12.4s
+87 reward 0.0039
+87 signal 0.0625
+Step   88 | reward: 0.0000 | signal: 0.00 | lr: 2.4347e-05 | norm: 0.0000 | dt: 14.2s
+88 reward 0.0000
+88 signal 0.0000
+Step   89 | reward: 0.0391 | signal: 0.12 | lr: 2.4283e-05 | norm: 0.2930 | dt: 13.4s
+89 reward 0.0391
+89 signal 0.1250
+Step   90 | reward: 0.0898 | signal: 0.25 | lr: 2.4218e-05 | norm: 1.8582 | dt: 12.7s
+90 reward 0.0898
+90 signal 0.2500
+Step   91 | reward: 0.0117 | signal: 0.12 | lr: 2.4154e-05 | norm: 0.2994 | dt: 13.6s
+91 reward 0.0117
+91 signal 0.1250
+Step   92 | reward: 0.0039 | signal: 0.06 | lr: 2.4090e-05 | norm: 0.2287 | dt: 12.5s
+92 reward 0.0039
+92 signal 0.0625
+Step   93 | reward: 0.0078 | signal: 0.12 | lr: 2.4026e-05 | norm: 0.4774 | dt: 14.1s
+93 reward 0.0078
+93 signal 0.1250
+Step   94 | reward: 0.0039 | signal: 0.06 | lr: 2.3961e-05 | norm: 0.1945 | dt: 13.5s
+94 reward 0.0039
+94 signal 0.0625
+Step   95 | reward: 0.0234 | signal: 0.12 | lr: 2.3897e-05 | norm: 1.1747 | dt: 14.1s
+95 reward 0.0234
+95 signal 0.1250
+Step   96 | reward: 0.0039 | signal: 0.06 | lr: 2.3833e-05 | norm: 0.1373 | dt: 14.0s
+96 reward 0.0039
+96 signal 0.0625
+Step   97 | reward: 0.0117 | signal: 0.19 | lr: 2.3769e-05 | norm: 0.2213 | dt: 14.3s
+97 reward 0.0117
+97 signal 0.1875
+Step   98 | reward: 0.0000 | signal: 0.00 | lr: 2.3704e-05 | norm: 0.0000 | dt: 12.7s
+98 reward 0.0000
+98 signal 0.0000
+Step   99 | reward: 0.0039 | signal: 0.06 | lr: 2.3640e-05 | norm: 0.1071 | dt: 13.7s
+99 reward 0.0039
+99 signal 0.0625
+Step  100 | reward: 0.0039 | signal: 0.06 | lr: 2.3576e-05 | norm: 0.0887 | dt: 15.1s
+100 reward 0.0039
+100 signal 0.0625
+Step  101 | reward: 0.0000 | signal: 0.00 | lr: 2.3512e-05 | norm: 0.0000 | dt: 12.7s
+101 reward 0.0000
+101 signal 0.0000
+Step  102 | reward: 0.0039 | signal: 0.06 | lr: 2.3448e-05 | norm: 0.1146 | dt: 13.7s
+102 reward 0.0039
+102 signal 0.0625
+Step  103 | reward: 0.0000 | signal: 0.00 | lr: 2.3383e-05 | norm: 0.0000 | dt: 28.1s
+103 reward 0.0000
+103 signal 0.0000
+Step  104 | reward: 0.0000 | signal: 0.00 | lr: 2.3319e-05 | norm: 0.0000 | dt: 34.0s
+104 reward 0.0000
+104 signal 0.0000
+Step  105 | reward: 0.0039 | signal: 0.06 | lr: 2.3255e-05 | norm: 0.0969 | dt: 32.6s
+105 reward 0.0039
+105 signal 0.0625
+Step  106 | reward: 0.0078 | signal: 0.12 | lr: 2.3191e-05 | norm: 0.1465 | dt: 32.0s
+106 reward 0.0078
+106 signal 0.1250
+Step  107 | reward: 0.0000 | signal: 0.00 | lr: 2.3126e-05 | norm: 0.0000 | dt: 31.6s
+107 reward 0.0000
+107 signal 0.0000
+Step  108 | reward: 0.0000 | signal: 0.00 | lr: 2.3062e-05 | norm: 0.0000 | dt: 32.3s
+108 reward 0.0000
+108 signal 0.0000
+Step  109 | reward: 0.0000 | signal: 0.00 | lr: 2.2998e-05 | norm: 0.0000 | dt: 35.0s
+109 reward 0.0000
+109 signal 0.0000
+Step  110 | reward: 0.0078 | signal: 0.06 | lr: 2.2934e-05 | norm: 0.1122 | dt: 35.8s
+110 reward 0.0078
+110 signal 0.0625
+Step  111 | reward: 0.0000 | signal: 0.00 | lr: 2.2869e-05 | norm: 0.0000 | dt: 34.9s
+111 reward 0.0000
+111 signal 0.0000
+Step  112 | reward: 0.0000 | signal: 0.00 | lr: 2.2805e-05 | norm: 0.0000 | dt: 32.4s
+112 reward 0.0000
+112 signal 0.0000
+Step  113 | reward: 0.0000 | signal: 0.00 | lr: 2.2741e-05 | norm: 0.0000 | dt: 33.5s
+113 reward 0.0000
+113 signal 0.0000
+Step  114 | reward: 0.0000 | signal: 0.00 | lr: 2.2677e-05 | norm: 0.0000 | dt: 39.0s
+114 reward 0.0000
+114 signal 0.0000
+Step  115 | reward: 0.0000 | signal: 0.00 | lr: 2.2612e-05 | norm: 0.0000 | dt: 37.3s
+115 reward 0.0000
+115 signal 0.0000
+Step  116 | reward: 0.0000 | signal: 0.00 | lr: 2.2548e-05 | norm: 0.0000 | dt: 38.6s
+116 reward 0.0000
+116 signal 0.0000
+Step  117 | reward: 0.0039 | signal: 0.06 | lr: 2.2484e-05 | norm: 0.0581 | dt: 40.2s
+117 reward 0.0039
+117 signal 0.0625
+Step  118 | reward: 0.0000 | signal: 0.00 | lr: 2.2420e-05 | norm: 0.0000 | dt: 39.1s
+118 reward 0.0000
+118 signal 0.0000
+Step  119 | reward: 0.0000 | signal: 0.00 | lr: 2.2355e-05 | norm: 0.0000 | dt: 38.5s
+119 reward 0.0000
+119 signal 0.0000
+120 pass@1 0.0000
+120 pass@8 0.0000
+Step  120 | reward: 0.0000 | signal: 0.00 | lr: 2.2291e-05 | norm: 0.0000 | dt: 30.0s
+120 reward 0.0000
+120 signal 0.0000
+Step  121 | reward: 0.0000 | signal: 0.00 | lr: 2.2227e-05 | norm: 0.0000 | dt: 31.2s
+121 reward 0.0000
+121 signal 0.0000
+Step  122 | reward: 0.0000 | signal: 0.00 | lr: 2.2163e-05 | norm: 0.0000 | dt: 28.6s
+122 reward 0.0000
+122 signal 0.0000
+Step  123 | reward: 0.0000 | signal: 0.00 | lr: 2.2099e-05 | norm: 0.0000 | dt: 29.6s
+123 reward 0.0000
+123 signal 0.0000
+Step  124 | reward: 0.0000 | signal: 0.00 | lr: 2.2034e-05 | norm: 0.0000 | dt: 29.9s
+124 reward 0.0000
+124 signal 0.0000
+Step  125 | reward: 0.0000 | signal: 0.00 | lr: 2.1970e-05 | norm: 0.0000 | dt: 28.1s
+125 reward 0.0000
+125 signal 0.0000
+Step  126 | reward: 0.0000 | signal: 0.00 | lr: 2.1906e-05 | norm: 0.0000 | dt: 30.8s
+126 reward 0.0000
+126 signal 0.0000
+Step  127 | reward: 0.0000 | signal: 0.00 | lr: 2.1842e-05 | norm: 0.0000 | dt: 17.2s
+127 reward 0.0000
+127 signal 0.0000
+Step  128 | reward: 0.0039 | signal: 0.06 | lr: 2.1777e-05 | norm: 0.0721 | dt: 38.8s
+128 reward 0.0039
+128 signal 0.0625
+Step  129 | reward: 0.0000 | signal: 0.00 | lr: 2.1713e-05 | norm: 0.0000 | dt: 38.4s
+129 reward 0.0000
+129 signal 0.0000
+Step  130 | reward: 0.0000 | signal: 0.00 | lr: 2.1649e-05 | norm: 0.0000 | dt: 41.2s
+130 reward 0.0000
+130 signal 0.0000
+Step  131 | reward: 0.0000 | signal: 0.00 | lr: 2.1585e-05 | norm: 0.0000 | dt: 39.6s
+131 reward 0.0000
+131 signal 0.0000
+Step  132 | reward: 0.0000 | signal: 0.00 | lr: 2.1520e-05 | norm: 0.0000 | dt: 40.2s
+132 reward 0.0000
+132 signal 0.0000
+Step  133 | reward: 0.0000 | signal: 0.00 | lr: 2.1456e-05 | norm: 0.0000 | dt: 39.3s
+133 reward 0.0000
+133 signal 0.0000
+Step  134 | reward: 0.0000 | signal: 0.00 | lr: 2.1392e-05 | norm: 0.0000 | dt: 29.5s
+134 reward 0.0000
+134 signal 0.0000
+Step  135 | reward: 0.0000 | signal: 0.00 | lr: 2.1328e-05 | norm: 0.0000 | dt: 36.4s
+135 reward 0.0000
+135 signal 0.0000

@@ -1,0 +1,68 @@
+warning: `VIRTUAL_ENV=/home/app/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead
+using device: cuda
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+num decayed parameter tensors: 50, with 124,354,560 parameters
+num non-decayed parameter tensors: 98, with 121,344 parameters
+using fused AdamW: True
+0 val_loss 1.0211
+0 MMLU 0.3220
+0 ARC-Easy 0.3870
+0 ARC-Challenge 0.3350
+0 chatcore 0.1307
+Step    0 | loss: 0.800451 | lr: 1.8000e-04 | norm: 3.4696 | dt: 1439.42ms | tok/sec: 45529.50
+Step    1 | loss: 4.621943 | lr: 1.8000e-04 | norm: 67.8900 | dt: 151.27ms | tok/sec: 433240.88
+Step    2 | loss: 3.538701 | lr: 1.8000e-04 | norm: 207.2699 | dt: 150.81ms | tok/sec: 434562.78
+Step    3 | loss: 1.981105 | lr: 1.8000e-04 | norm: 33.8351 | dt: 150.99ms | tok/sec: 434039.91
+Step    4 | loss: 1.557312 | lr: 1.8000e-04 | norm: 13.3925 | dt: 153.81ms | tok/sec: 426087.36
+Step    5 | loss: 1.309965 | lr: 1.8000e-04 | norm: 9.2106 | dt: 150.99ms | tok/sec: 434055.67
+Step    6 | loss: 1.156459 | lr: 1.8000e-04 | norm: 4.3777 | dt: 155.56ms | tok/sec: 421297.23
+Step    7 | loss: 1.063652 | lr: 1.8000e-04 | norm: 4.0649 | dt: 154.16ms | tok/sec: 425112.75
+Step    8 | loss: 1.003401 | lr: 1.8000e-04 | norm: 3.9047 | dt: 154.57ms | tok/sec: 423984.93
+Step    9 | loss: 0.939133 | lr: 1.8000e-04 | norm: 3.5600 | dt: 152.60ms | tok/sec: 429459.15
+10 val_loss 1.1041
+10 MMLU 0.3160
+10 ARC-Easy 0.3320
+10 ARC-Challenge 0.2880
+10 chatcore 0.0827
+Step   10 | loss: 0.881017 | lr: 1.8000e-04 | norm: 2.7493 | dt: 188.67ms | tok/sec: 347362.80
+Step   11 | loss: 0.863417 | lr: 1.8000e-04 | norm: 2.7879 | dt: 191.94ms | tok/sec: 341448.82
+Step   12 | loss: 0.858211 | lr: 1.8000e-04 | norm: 1.7304 | dt: 172.08ms | tok/sec: 380855.00
+Step   13 | loss: 0.813588 | lr: 1.8000e-04 | norm: 1.5288 | dt: 185.43ms | tok/sec: 353420.71
+Step   14 | loss: 0.745691 | lr: 1.8000e-04 | norm: 1.2813 | dt: 270.45ms | tok/sec: 242318.53
+Step   15 | loss: 0.804118 | lr: 1.8000e-04 | norm: 1.9145 | dt: 433.37ms | tok/sec: 151223.42
+Step   16 | loss: 0.770645 | lr: 1.8000e-04 | norm: 1.5492 | dt: 426.63ms | tok/sec: 153612.25
+Step   17 | loss: 0.764933 | lr: 1.8000e-04 | norm: 1.5410 | dt: 318.37ms | tok/sec: 205845.54
+Step   18 | loss: 0.711677 | lr: 1.8000e-04 | norm: 1.4251 | dt: 251.60ms | tok/sec: 260472.23
+Step   19 | loss: 0.744415 | lr: 1.7514e-04 | norm: 1.6445 | dt: 167.19ms | tok/sec: 391974.93
+20 val_loss 0.9949
+20 MMLU 0.2990
+20 ARC-Easy 0.2740
+20 ARC-Challenge 0.2950
+20 chatcore 0.0524
+Step   20 | loss: 0.715737 | lr: 1.6541e-04 | norm: 1.2930 | dt: 153.73ms | tok/sec: 426314.03
+Step   21 | loss: 0.704696 | lr: 1.5568e-04 | norm: 1.3048 | dt: 151.98ms | tok/sec: 431216.88
+Step   22 | loss: 0.689710 | lr: 1.4595e-04 | norm: 1.6835 | dt: 155.87ms | tok/sec: 420454.98
+Step   23 | loss: 0.684117 | lr: 1.3622e-04 | norm: 1.1801 | dt: 154.03ms | tok/sec: 425466.10
+Step   24 | loss: 0.689265 | lr: 1.2649e-04 | norm: 1.8348 | dt: 153.13ms | tok/sec: 427981.41
+Step   25 | loss: 0.685300 | lr: 1.1676e-04 | norm: 1.6245 | dt: 154.50ms | tok/sec: 424181.21
+Step   26 | loss: 0.679395 | lr: 1.0703e-04 | norm: 1.5196 | dt: 153.75ms | tok/sec: 426245.28
+Step   27 | loss: 0.700998 | lr: 9.7297e-05 | norm: 1.6507 | dt: 170.38ms | tok/sec: 384639.37
+Step   28 | loss: 0.668101 | lr: 8.7568e-05 | norm: 1.1463 | dt: 152.25ms | tok/sec: 430445.05
+Step   29 | loss: 0.641929 | lr: 7.7838e-05 | norm: 1.0633 | dt: 154.10ms | tok/sec: 425270.60
+30 val_loss 0.9594
+30 MMLU 0.3220
+30 ARC-Easy 0.3180
+30 ARC-Challenge 0.3050
+30 chatcore 0.0867
+Step   30 | loss: 0.659907 | lr: 6.8108e-05 | norm: 1.1131 | dt: 153.76ms | tok/sec: 426221.48
+Step   31 | loss: 0.644049 | lr: 5.8378e-05 | norm: 1.0332 | dt: 154.48ms | tok/sec: 424236.20
+Step   32 | loss: 0.647867 | lr: 4.8649e-05 | norm: 0.9350 | dt: 152.22ms | tok/sec: 430525.28
+Step   33 | loss: 0.639720 | lr: 3.8919e-05 | norm: 0.9606 | dt: 154.70ms | tok/sec: 423643.17
+Step   34 | loss: 0.637248 | lr: 2.9189e-05 | norm: 1.0355 | dt: 153.69ms | tok/sec: 426416.54
+Step   35 | loss: 0.642685 | lr: 1.9459e-05 | norm: 0.9608 | dt: 155.01ms | tok/sec: 422779.17
+Step   36 | loss: 0.632104 | lr: 9.7297e-06 | norm: 0.8809 | dt: 157.48ms | tok/sec: 416158.21
+37 val_loss 0.9533
+37 MMLU 0.3022
+37 ARC-Easy 0.3388
+37 ARC-Challenge 0.3029
+37 chatcore 0.0862

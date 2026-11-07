@@ -69,7 +69,7 @@ def chat(model, temperature=0.6, top_k=50, max_new_tokens=512):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--checkpoint", default="log_sft_0.8/model_sft.pt", help="SFT model path")
+    parser.add_argument("--checkpoint", default="run_logs/rl_lr5e-6/model_rl.pt", help="Chat model path")
     parser.add_argument("--temperature", type=float, default=0.6, help="0 = always the most likely token")
     parser.add_argument("--top-k", type=int, default=50)
     parser.add_argument("--max-new-tokens", type=int, default=512, help="longest reply")
