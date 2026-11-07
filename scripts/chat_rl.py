@@ -128,12 +128,22 @@ def get_rl_lr(step, num_steps, max_lr=3e-5):
 
 def train_rl(checkpoint_path, train_task, eval_task, log_dir, device, questions_per_step=16, 
              num_samples=16, max_new_tokens=256, temperature=1.0, top_k=50, max_lr=3e-5, 
-             num_steps=None, eval_every=60, eval_examples=400, eval_samples=8):
+             num_steps=None, eval_every=60, eval_examples=400, eval_samples=8, save_every=30,
+             positive_only=True):
     """RL on a task with a checkable answer (GSM8K): sample answers, reward correct ones, update.
 
     nanochat's simplified GRPO. Each step, for questions_per_step new questions, rollout samples
     num_samples answers and scores them; rl_loss then raises the probability of answers that beat
-    their group's average and lowers the rest. One pass over the data, single GPU.
+    their group's average and (unless positive_only) lowers the rest. One pass over the data,
+    single GPU.
+
+    Why positive_only (the default): with rewards this sparse, a mixed group typically has 1 right
+    and 15 wrong answers, so most of the gradient says "make what you sampled less likely". That
+    probability flows to tokens the model didn't sample, the output gets more random, answers stop
+    ending, rewards fall further, and the model collapses. The first run (log_rl, centered
+    advantages, lr 3e-5) produced word salad by step 120, with every answer hitting the 256-token
+    limit. Clamping advantages at 0 only reinforces correct answers the model actually wrote:
+    "rejection sampling" / expert iteration, i.e. SFT on its own correct answers.
 
     Args:
         checkpoint_path: the SFT checkpoint to start from (it has no optimizer state).
@@ -147,22 +157,28 @@ def train_rl(checkpoint_path, train_task, eval_task, log_dir, device, questions_
         max_lr: peak learning rate, decaying linearly to 0 (get_rl_lr).
         num_steps: None = one epoch, len(train_task) // questions_per_step (467 for GSM8K).
         eval_every, eval_examples, eval_samples: pass@k on eval_task every eval_every steps.
+        save_every: save log_dir/model_rl_<step>.pt every this many steps (about 550 MB each).
+        positive_only: clamp advantages at 0, so wrong answers are ignored rather than pushed down.
 
     What it does:
         1. Load the model and create a fresh AdamW with weight decay 0.
-        2. Each step: every eval_every steps, evaluate and save log_dir/model_rl.pt; set the lr; for
-           each question, run rollout, skip it if every advantage is 0 (no signal), otherwise backward
-           rl_loss / questions_per_step; clip the gradient norm to 1.0; step the optimizer; print and log.
+        2. Each step: evaluate every eval_every steps and save every save_every steps; set the lr;
+           for each question, run rollout, clamp the advantages if positive_only, skip the question
+           if every advantage is 0 (no signal), otherwise backward rl_loss / questions_per_step;
+           clip the gradient norm to 1.0; step the optimizer; print and log.
         3. Final eval, then save log_dir/model_rl.pt.
 
-    model_rl.pt is overwritten at every eval, so if the run crashes (e.g. out of memory on a shared
-    GPU), the weights from the last eval survive; its "step" says how many steps they include.
-    It holds no optimizer state, so a restart from it begins with a fresh AdamW.
+    Checkpoints: model_rl_000030.pt, model_rl_000060.pt, ... are kept side by side, so a good
+    intermediate model is never overwritten by a later, worse one, and a crash keeps the latest.
+    They hold no optimizer state, so a restart from one begins with a fresh AdamW.
 
     Log lines (log_dir/log.txt):
         "<step> reward <mean>"   mean reward over the step's samples: should rise
-        "<step> signal <frac>"   fraction of questions whose samples didn't all get the same reward;
+        "<step> signal <frac>"   fraction of questions with at least one non-zero advantage;
                                  below ~0.1, the step learns almost nothing
+        "<step> length <mean>"   mean tokens the model wrote per answer (forced calculator output
+                                 excluded). A steady rise towards max_new_tokens is the early warning
+                                 of collapse: answers that stop ending get no "####" and no reward.
         "<step> pass@1 <acc>" and "<step> pass@<eval_samples> <acc>" at each eval
 
     Returns:
@@ -193,17 +209,17 @@ def train_rl(checkpoint_path, train_task, eval_task, log_dir, device, questions_
             log(step, f"pass@{k}", k_passes[k])
         return k_passes
 
-    def save(step, k_passes):
-        # Overwrites the previous save; "step" = how many training steps these weights include
+    def save(step, filename, k_passes=None):
+        # "step" = how many training steps these weights include
         save_checkpoint({"model": core_model.state_dict(), "config": core_model.config, "step": step, "results": k_passes},
-                        os.path.join(log_dir, "model_rl.pt"))
+                        os.path.join(log_dir, filename))
 
     # Loop steps
     for step in range(num_steps):
         if step % eval_every == 0:
-            k_passes = run_eval(step)
-            if step > 0:
-                save(step, k_passes)   # so a crash later in the run keeps the progress up to here
+            run_eval(step)
+        if step > 0 and step % save_every == 0:
+            save(step, f"model_rl_{step:06d}.pt")   # one file per save, so none is overwritten
 
         lr = get_rl_lr(step, num_steps, max_lr)
         for group in optimizer.param_groups:
@@ -211,7 +227,7 @@ def train_rl(checkpoint_path, train_task, eval_task, log_dir, device, questions_
 
         t0 = time.time()
         optimizer.zero_grad()
-        rewards_sum, num_with_signal = 0.0, 0
+        rewards_sum, length_sum, num_with_signal = 0.0, 0.0, 0
 
         for q in range(questions_per_step):
             index = step * questions_per_step + q   # every question is used once
@@ -220,8 +236,13 @@ def train_rl(checkpoint_path, train_task, eval_task, log_dir, device, questions_
                                                     max_new_tokens=max_new_tokens, temperature=temperature,
                                                     top_k=top_k, seed=index)
             rewards_sum += rewards.mean().item()
+            length_sum += (y != -1).sum(dim=1).float().mean().item()   # tokens the model chose per answer
 
-            # All samples got the same reward: zero gradient, so skip the forward and backward
+            # Ignore wrong answers instead of pushing them down (see the docstring)
+            if positive_only:
+                advantages = advantages.clamp(min=0)
+
+            # No non-zero advantage: zero gradient, so skip the forward and backward
             if (advantages == 0).all():
                 continue
 
@@ -236,13 +257,15 @@ def train_rl(checkpoint_path, train_task, eval_task, log_dir, device, questions_
         dt = time.time() - t0
         mean_reward = rewards_sum / questions_per_step
         signal = num_with_signal / questions_per_step
-        print(f"Step {step:4d} | reward: {mean_reward:.4f} | signal: {signal:.2f} | lr: {lr:.4e} | norm: {norm.item():.4f} | dt: {dt:.1f}s")
+        mean_length = length_sum / questions_per_step
+        print(f"Step {step:4d} | reward: {mean_reward:.4f} | signal: {signal:.2f} | length: {mean_length:.0f} | lr: {lr:.4e} | norm: {norm.item():.4f} | dt: {dt:.1f}s")
         log(step, "reward", mean_reward)
         log(step, "signal", signal)
+        log(step, "length", mean_length)
 
     # Finish
     k_passes = run_eval(num_steps)
-    save(num_steps, k_passes)
+    save(num_steps, "model_rl.pt", k_passes)
 
     return core_model, k_passes
 
@@ -370,7 +393,7 @@ def run_tests():
     folder = tempfile.mkdtemp()
     base_path = os.path.join(folder, "model_sft.pt")
     torch.save({"model": base.state_dict(), "config": base.config, "step": 0}, base_path)   # no optimizer, like model_sft.pt
-    settings = dict(questions_per_step=2, num_samples=4, max_new_tokens=6, max_lr=1e-2, eval_every=2, eval_examples=2, eval_samples=2)
+    settings = dict(questions_per_step=2, num_samples=4, max_new_tokens=6, max_lr=1e-2, eval_every=2, eval_examples=2, eval_samples=2, save_every=2)
 
     # Mixed rewards: runs, logs, learns and saves
     parity = lambda c: len(c) % 2 == 0
@@ -388,7 +411,21 @@ def run_tests():
     x = torch.randint(0, 50304, (1, 8))
     assert torch.equal(reloaded.eval()(x)[0], model.eval()(x)[0]) and saved["step"] == 4
 
-    # A crash mid-run keeps the checkpoint from the last eval (here: saved at step 2, crash during step 3)
+    # Intermediate checkpoints are separate files: with save_every=2 over 4 steps, only step 2's
+    assert sorted(f for f in os.listdir(log_dir) if f.endswith(".pt")) == ["model_rl.pt", "model_rl_000002.pt"]
+    assert load_checkpoint(os.path.join(log_dir, "model_rl_000002.pt"), "cpu")[1]["step"] == 2
+
+    # One length line per step, between 1 and max_new_tokens
+    lengths = [float(line.split()[-1]) for line in lines if " length " in line]
+    assert len(lengths) == 4 and all(1 <= v <= 6 for v in lengths), lengths
+
+    # positive_only=False (centered advantages, wrong answers pushed down) still runs, and the flag
+    # changes the result: the same run ends with different weights
+    log_dir = os.path.join(folder, "log_rl_centered")
+    centered, _ = train_rl(base_path, FakeGSM8K(parity), FakeGSM8K(parity), log_dir, "cpu", **{**settings, "positive_only": False})
+    assert not torch.equal(centered.transformer.wte.weight, model.transformer.wte.weight)
+
+    # A crash mid-run keeps the latest saved checkpoint (here: saved at step 2, crash during step 3)
     class CrashingGSM8K(FakeGSM8K):
         def __getitem__(self, index):
             if index >= 6:
@@ -400,8 +437,9 @@ def run_tests():
         raise AssertionError("expected the simulated crash")
     except RuntimeError:
         pass
-    _, saved = load_checkpoint(os.path.join(log_dir, "model_rl.pt"), "cpu")
-    assert saved["step"] == 2 and set(saved["results"]) == {1, 2}
+    assert not os.path.exists(os.path.join(log_dir, "model_rl.pt")), "the run never finished"
+    _, saved = load_checkpoint(os.path.join(log_dir, "model_rl_000002.pt"), "cpu")
+    assert saved["step"] == 2
 
     # Refuses to overwrite an existing log
     try:
@@ -439,6 +477,9 @@ if __name__ == "__main__":
     parser.add_argument("--num-samples", type=int, default=16, help="answers per question")
     parser.add_argument("--eval-every", type=int, default=60)
     parser.add_argument("--eval-examples", type=int, default=400, help="GSM8K test questions per eval")
+    parser.add_argument("--save-every", type=int, default=30, help="save model_rl_<step>.pt every N steps")
+    parser.add_argument("--keep-negative", action="store_true",
+                        help="push wrong answers down too (centered advantages); collapsed in our first run")
     args = parser.parse_args()
 
     if args.test:
@@ -459,4 +500,5 @@ if __name__ == "__main__":
     train_rl(args.checkpoint, GSM8K("train"), GSM8K("test"), args.log_dir, device,
              questions_per_step=args.questions_per_step, num_samples=args.num_samples,
              max_lr=args.max_lr, num_steps=args.num_steps,
-             eval_every=args.eval_every, eval_examples=args.eval_examples)
+             eval_every=args.eval_every, eval_examples=args.eval_examples,
+             save_every=args.save_every, positive_only=not args.keep_negative)
