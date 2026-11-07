@@ -150,10 +150,14 @@ def train_rl(checkpoint_path, train_task, eval_task, log_dir, device, questions_
 
     What it does:
         1. Load the model and create a fresh AdamW with weight decay 0.
-        2. Each step: evaluate every eval_every steps; set the lr; for each question, run rollout,
-           skip it if every advantage is 0 (no signal), otherwise backward rl_loss / questions_per_step;
-           clip the gradient norm to 1.0; step the optimizer; print and log.
+        2. Each step: every eval_every steps, evaluate and save log_dir/model_rl.pt; set the lr; for
+           each question, run rollout, skip it if every advantage is 0 (no signal), otherwise backward
+           rl_loss / questions_per_step; clip the gradient norm to 1.0; step the optimizer; print and log.
         3. Final eval, then save log_dir/model_rl.pt.
+
+    model_rl.pt is overwritten at every eval, so if the run crashes (e.g. out of memory on a shared
+    GPU), the weights from the last eval survive; its "step" says how many steps they include.
+    It holds no optimizer state, so a restart from it begins with a fresh AdamW.
 
     Log lines (log_dir/log.txt):
         "<step> reward <mean>"   mean reward over the step's samples: should rise
@@ -189,10 +193,17 @@ def train_rl(checkpoint_path, train_task, eval_task, log_dir, device, questions_
             log(step, f"pass@{k}", k_passes[k])
         return k_passes
 
+    def save(step, k_passes):
+        # Overwrites the previous save; "step" = how many training steps these weights include
+        save_checkpoint({"model": core_model.state_dict(), "config": core_model.config, "step": step, "results": k_passes},
+                        os.path.join(log_dir, "model_rl.pt"))
+
     # Loop steps
     for step in range(num_steps):
         if step % eval_every == 0:
-            run_eval(step)
+            k_passes = run_eval(step)
+            if step > 0:
+                save(step, k_passes)   # so a crash later in the run keeps the progress up to here
 
         lr = get_rl_lr(step, num_steps, max_lr)
         for group in optimizer.param_groups:
@@ -231,8 +242,7 @@ def train_rl(checkpoint_path, train_task, eval_task, log_dir, device, questions_
 
     # Finish
     k_passes = run_eval(num_steps)
-    save_checkpoint({"model": core_model.state_dict(), "config": core_model.config, "step": num_steps, "results": k_passes},
-                    os.path.join(log_dir, "model_rl.pt"))
+    save(num_steps, k_passes)
 
     return core_model, k_passes
 
@@ -377,6 +387,21 @@ def run_tests():
     reloaded, saved = load_checkpoint(os.path.join(log_dir, "model_rl.pt"), "cpu")
     x = torch.randint(0, 50304, (1, 8))
     assert torch.equal(reloaded.eval()(x)[0], model.eval()(x)[0]) and saved["step"] == 4
+
+    # A crash mid-run keeps the checkpoint from the last eval (here: saved at step 2, crash during step 3)
+    class CrashingGSM8K(FakeGSM8K):
+        def __getitem__(self, index):
+            if index >= 6:
+                raise RuntimeError("simulated crash")
+            return super().__getitem__(index)
+    log_dir = os.path.join(folder, "log_rl_crash")
+    try:
+        train_rl(base_path, CrashingGSM8K(parity), FakeGSM8K(parity), log_dir, "cpu", **settings)
+        raise AssertionError("expected the simulated crash")
+    except RuntimeError:
+        pass
+    _, saved = load_checkpoint(os.path.join(log_dir, "model_rl.pt"), "cpu")
+    assert saved["step"] == 2 and set(saved["results"]) == {1, 2}
 
     # Refuses to overwrite an existing log
     try:
