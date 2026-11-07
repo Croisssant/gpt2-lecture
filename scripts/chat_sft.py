@@ -162,7 +162,8 @@ def train_sft(checkpoint_path, train_task, val_task, eval_tasks, log_dir, device
         - length: one pass over train_task rather than a token budget. Single GPU, no DDP.
 
     Args:
-        checkpoint_path: the pretraining checkpoint; it must contain "optimizer".
+        checkpoint_path: a pretraining or SFT checkpoint. Its optimizer state is loaded if present
+            (pretraining checkpoints); otherwise AdamW starts fresh (SFT checkpoints have none).
         train_task, val_task: from build_tasks.
         eval_tasks: {name: task} of multiple-choice tasks for run_evals.
         log_dir: a new folder. It's created, and must not already contain log.txt, so an
@@ -204,7 +205,9 @@ def train_sft(checkpoint_path, train_task, val_task, eval_tasks, log_dir, device
     init_lr = max_lr * init_lr_frac
     core_model, checkpoint = load_checkpoint(checkpoint_path, device)
     optimizer = core_model.configure_optimizers(weight_decay=0.0, learning_rate=init_lr, device=device)
-    optimizer.load_state_dict(checkpoint["optimizer"])
+    # Pretraining checkpoints have optimizer state; SFT checkpoints don't, so AdamW starts fresh
+    if "optimizer" in checkpoint:
+        optimizer.load_state_dict(checkpoint["optimizer"])
 
     for group in optimizer.param_groups:
         group["weight_decay"]= 0.0
@@ -250,24 +253,35 @@ def train_sft(checkpoint_path, train_task, val_task, eval_tasks, log_dir, device
     return core_model, optimizer, results
 
 
-def build_tasks():
-    """Build the SFT datasets, following nanochat's mix.
+def build_tasks(task="mix"):
+    """Build the SFT datasets.
+
+    Args:
+        task: "mix" (the full SFT mix, following nanochat) or "gsm8k" (GSM8K train x2 only, to
+            teach its "#### <answer>" format before RL).
 
     Returns:
-        train_task: TaskMixture of SmolTalk train + MMLU auxiliary_train x3 + GSM8K train x4,
-            789,759 conversations. Repeating the smaller tasks gives them more weight.
-        val_task: TaskMixture of SmolTalk, MMLU and GSM8K test, for validation loss (39,590).
-        eval_tasks: {"MMLU": test, "ARC-Easy": test, "ARC-Challenge": test} for multiple choice.
+        train_task: for "mix", TaskMixture of SmolTalk train + MMLU auxiliary_train x3 + GSM8K
+            train x4, 789,759 conversations; repeating the smaller tasks gives them more weight.
+            For "gsm8k", GSM8K train x2, 14,946 conversations.
+        val_task: for "mix", SmolTalk, MMLU and GSM8K test (39,590); for "gsm8k", GSM8K test (1,319).
+        eval_tasks: {"MMLU": test, "ARC-Easy": test, "ARC-Challenge": test} for multiple choice,
+            the same for both, so a GSM8K-only run shows whether these drop.
 
     Loading downloads the datasets on first use; Hugging Face caches them afterwards.
     """
+    eval_tasks = {"MMLU": MMLU("test"), "ARC-Easy": ARC("ARC-Easy", "test"), "ARC-Challenge": ARC("ARC-Challenge", "test")}
+
+    if task == "gsm8k":
+        return TaskMixture([GSM8K("train")] * 2), GSM8K("test"), eval_tasks
+
+    assert task == "mix", f"unknown task {task}"
     smol = SmolTalk("train")
     mmlu = MMLU("auxiliary_train")
     gsm = GSM8K("train")
 
     train_task = TaskMixture([smol] + [mmlu] * 3 + [gsm] * 4)
     val_task = TaskMixture([SmolTalk("test"), MMLU("test"), GSM8K("test")])
-    eval_tasks = {"MMLU": MMLU("test"), "ARC-Easy": ARC("ARC-Easy", "test"), "ARC-Challenge": ARC("ARC-Challenge", "test")}
 
     return train_task, val_task, eval_tasks
 
@@ -423,6 +437,14 @@ def run_tests():
     assert saved["step"] == num_steps and saved["results"] == results
 
 
+    # A checkpoint without optimizer state (like model_sft.pt) trains with a fresh AdamW
+    no_opt_path = os.path.join(folder, "model_no_opt.pt")
+    torch.save({"model": original.state_dict(), "config": original.config, "step": 0}, no_opt_path)
+    _, optimizer, _ = train_sft(no_opt_path, train_task, train_task, {"all_right": ScoreTask(4, 1)},
+                                os.path.join(folder, "log_sft_no_opt"), "cpu", B=2, T=31, total_batch_size=124, max_lr=3e-3, eval_every=5)
+    first_param = optimizer.param_groups[0]["params"][0]
+    assert optimizer.state[first_param]["step"].item() == num_steps, "a fresh optimizer counts only this run's steps"
+
     print("all tests passed")
     
 
@@ -437,6 +459,9 @@ if __name__ == "__main__":
     parser.add_argument("--init-lr-frac", type=float, default=0.8)
     parser.add_argument("--max-examples", type=int, default=1000, help="questions per task during training")
     parser.add_argument("--limit", type=int, default=None, help="use only the first N train conversations")
+    parser.add_argument("--task", choices=["mix", "gsm8k"], default="mix", help="mix = full SFT mix, gsm8k = GSM8K train x2 only")
+    parser.add_argument("--total-batch-size", type=int, default=524288, help="tokens per optimizer step")
+    parser.add_argument("--eval-every", type=int, default=100)
     args = parser.parse_args()
 
     if not args.test and (args.checkpoint is None or args.log_dir is None):
@@ -455,9 +480,10 @@ if __name__ == "__main__":
     print(f"using device: {device}")
 
     torch.set_float32_matmul_precision("high")
-    train_task, val_task, eval_tasks = build_tasks()
+    train_task, val_task, eval_tasks = build_tasks(args.task)
     if args.limit:
         train_task.index_map = train_task.index_map[:args.limit]
 
     train_sft(args.checkpoint, train_task, val_task, eval_tasks, args.log_dir, device,
-            init_lr_frac=args.init_lr_frac, max_examples=args.max_examples, use_compile=(device == "cuda"))
+            init_lr_frac=args.init_lr_frac, max_examples=args.max_examples, use_compile=(device == "cuda"),
+            total_batch_size=args.total_batch_size, eval_every=args.eval_every)
