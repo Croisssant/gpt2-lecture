@@ -8,6 +8,38 @@ from gpt.chat_tokenizer import enc, render_for_completion
 
 
 def rollout(model, task, index, num_samples=16, max_new_tokens=256, temperature=1.0, top_k=50, seed=0):
+    """Answer one question num_samples times, score each answer, and build training tensors.
+
+    This is the "experience" half of RL: the model tries, and the reward says how well each try
+    went. Each sample is judged against the *group* of samples for the same question (GRPO-style),
+    so no separate value model is needed.
+
+    Args:
+        model: the uncompiled model (generate's shapes change every step).
+        task: has [index] and reward(conversation, completion), e.g. GSM8K("train").
+        index: which question.
+        num_samples: samples per question, the group size (16, as in nanochat).
+        max_new_tokens, temperature, top_k, seed: passed to generate. Temperature 1.0 samples from
+            the model's own distribution, so the group explores different answers.
+
+    What it does:
+        1. Build the prompt with render_for_completion and generate num_samples replies.
+        2. For each sample, decode its tokens and get its reward from task.reward.
+        3. Make each row prompt + reply, with mask 0 for the prompt and generate's masks for the
+           reply, and turn the rows into x and y with build_xy. All rows are the same length,
+           because generate pads finished rows.
+        4. advantages = rewards - rewards.mean().
+
+    Returns:
+        x, y: (B, L-1) long tensors on the model's device. y is -1 for the prompt, forced
+            calculator output and padding, so only tokens the model chose get credit or blame.
+        rewards: (B,) float tensor, e.g. 1.0 = correct.
+        advantages: (B,) float tensor that sums to 0. Positive = better than this group's average.
+
+    Example: rewards [1, 0, 0, 1] -> mean 0.5 -> advantages [+0.5, -0.5, -0.5, +0.5].
+    If every sample gets the same reward (all wrong, or all right), every advantage is 0 and the
+    question teaches nothing. The SFT model scores 0 on GSM8K, so every advantage is 0 there.
+    """
     device = next(model.parameters()).device
     conversation = task[index]
     prompt_ids = render_for_completion(conversation)
@@ -32,6 +64,36 @@ def rollout(model, task, index, num_samples=16, max_new_tokens=256, temperature=
 
 
 def rl_loss(model, x, y, advantages):
+    """The policy-gradient (REINFORCE) loss for one rollout.
+
+    Minimizing it raises the probability of every token in samples with a positive advantage and
+    lowers it in samples with a negative advantage, in proportion to the advantage. This is
+    nanochat's simplified GRPO: no KL penalty, no reference model and no PPO clipping, because
+    each batch of samples is used for exactly one update (fully on-policy).
+
+    Args:
+        model: the model being trained.
+        x, y: (B, T) from rollout, with y = -1 where tokens weren't chosen by the model.
+        advantages: (B,) from rollout.
+
+    What it does:
+        1. nll = model(x, targets=y, loss_reduction="none"): (B, T) of -log p(chosen token),
+           already 0 wherever y == -1 (ignore_index).
+        2. logp = -nll.
+        3. loss = -sum(logp * advantage of that row) / number of valid tokens (y != -1).
+           Each row's advantage multiplies all of its tokens. The minus sign is because the
+           optimizer minimizes, while we want to maximize logp * advantage.
+
+    Returns:
+        A scalar tensor to call .backward() on.
+
+    The value itself isn't meaningful to track: it can be negative, and it's exactly 0 when every
+    advantage is 0. Track the mean reward instead.
+
+    Example:
+        logp row 0 [-1.0, -2.0] (advantage +0.5), row 1 [-0.5, ignored] (advantage -0.5)
+        sum = 0.5*(-3.0) + (-0.5)*(-0.5) = -1.25; 3 valid tokens -> loss = 1.25 / 3 = 0.417
+    """
 
     # nll: negative log likelihood
     _, nll = model(x, targets=y, loss_reduction="none")
@@ -43,6 +105,19 @@ def rl_loss(model, x, y, advantages):
 
 
 def get_rl_lr(step, num_steps, max_lr=3e-5):
+    """RL learning rate: decreases in a straight line from max_lr to 0, with no warmup.
+
+    Args:
+        step: from 0 to num_steps - 1.
+        num_steps: the length of the run.
+        max_lr: 3e-5, i.e. 0.05 x the pretraining peak of 6e-4, the same fraction nanochat uses.
+            RL should only nudge a model that can already write well, so this is about 16x
+            smaller than SFT's.
+
+    Returns:
+        max_lr * (1 - step / num_steps), e.g. with num_steps=100: step 0 -> 3e-5,
+        step 50 -> 1.5e-5, step 99 -> 3e-7.
+    """
     return max_lr * (1 - step / num_steps)
 
 

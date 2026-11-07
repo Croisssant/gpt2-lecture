@@ -58,6 +58,22 @@ def save_checkpoint(checkpoint, checkpoint_path, attempts=3):
 
 
 def load_checkpoint(checkpoint_path, device):
+    """Rebuild a GPT from a saved checkpoint and move it to device.
+
+    Args:
+        checkpoint_path: a .pt file saved with {"model": state_dict, "config": GPTConfig, ...}.
+        device: where to put the model and its tensors.
+
+    Returns:
+        (model, checkpoint): the GPT with the saved weights, and the full checkpoint dict, so the
+        caller can also use checkpoint["optimizer"], ["step"] and so on.
+        The model is in train mode; call model.eval() for inference.
+
+    Pickle gotcha: pretraining checkpoints were saved from train_gpt2.py run as a script, so their
+    config is stored as __main__.GPTConfig. Any script that loads one must therefore import
+    GPTConfig at the top level (from gpt.model import GPT, GPTConfig), or unpickling fails with
+    "Can't get attribute 'GPTConfig'". SFT checkpoints store gpt.model.GPTConfig and load anywhere.
+    """
     checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
     model = GPT(checkpoint["config"])
     model.load_state_dict(checkpoint["model"])

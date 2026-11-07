@@ -2,6 +2,19 @@ import datasets
 import re
 
 def extract_answer(text):
+    """Find the final answer in a GSM8K-style solution: the number after "#### ".
+
+    Args:
+        text: a reference solution, or a model's completion.
+
+    Returns:
+        The number as a string with commas removed, e.g. "#### 1,234" -> "1234", or None if
+        there's no "#### <number>" in the text. Only the first match counts.
+
+    The model must write the "####" line itself to get credit: a correct number anywhere else
+    in its answer is ignored. The SFT model never writes it (it answers in SmolTalk's style), so
+    it scores 0 until it is trained on GSM8K's format.
+    """
     pattern = r"#### (\-?[0-9\.\,]+)"
     match = re.search(pattern, text)
 
@@ -12,6 +25,15 @@ def extract_answer(text):
     return None
 
 class GSM8K:
+    """Grade-school maths word problems with worked solutions (openai/gsm8k, "main").
+
+    Used 4 times in the SFT mix (to teach the format and calculator use), as part of validation,
+    and as the RL task, where the reward is whether the final answer is right.
+
+    Args:
+        split: "train" (7,473 problems) or "test" (1,319).
+    """
+
     def __init__(self, split):
         assert split in ["train", "test"], "Split can only be either train or test"
         data = datasets.load_dataset("openai/gsm8k", "main", split=split)
@@ -21,6 +43,22 @@ class GSM8K:
         return len(self.ds)
 
     def __getitem__(self, index):
+        """Return one problem as a conversation whose answer uses the calculator tool.
+
+        GSM8K solutions mark each calculation as <<expression=result>>, e.g.
+            "Natalia sold 48/2 = <<48/2=24>>24 clips in May.\\n#### 72"
+        Each marker becomes two parts of the assistant's content:
+            - {"type": "python", "text": "48/2"}: the call, trained on (mask 1), so the model
+              learns *when* to use the calculator and what to type.
+            - {"type": "python_output", "text": "24"}: the result, not trained on (mask 0),
+              because at inference the engine computes it and inserts it.
+        Everything else becomes {"type": "text", ...} parts.
+
+        Returns:
+            {"messages": [{"role": "user", "content": question},
+                          {"role": "assistant", "content": [text, python, python_output, text, ...]}]}
+            The last part is text ending in "#### <answer>".
+        """
         ds_data = self.ds[index]
         ds_answer = ds_data["answer"]
         ds_question = ds_data["question"]
@@ -46,9 +84,23 @@ class GSM8K:
         ]}
     
     def evaluate(self, conversation, completion):
+        """Return 1 if the completion's "#### " answer equals the reference answer, else 0.
+
+        Args:
+            conversation: from __getitem__; the reference answer is read from its last text part.
+            completion: the model's decoded answer, special tokens included.
+
+        Answers are compared as strings after removing commas, so "16.0" doesn't match "16".
+        A completion with no "####" line scores 0, as does one cut off at max_new_tokens.
+        """
         return int(extract_answer(completion) == extract_answer(conversation["messages"][-1]["content"][-1]["text"]))
 
     def reward(self, conversation, completion):
+        """The RL reward: 1.0 for a correct final answer, 0.0 otherwise (evaluate as a float).
+
+        There's no partial credit for working or format. rollout subtracts each group's mean
+        from these rewards to get the advantages.
+        """
         return float(self.evaluate(conversation, completion))
 
 

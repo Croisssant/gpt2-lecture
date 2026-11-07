@@ -10,7 +10,28 @@ OUT_START = special_token_ids["<|output_start|>"]
 OUT_END = special_token_ids["<|output_end|>"]
 ASSISTANT_END = special_token_ids["<|assistant_end|>"]
 
-def sample_next_token(logits, rng, temperature=1.0, top_k=50):   
+def sample_next_token(logits, rng, temperature=1.0, top_k=50):
+    """Pick the next token for each row from the model's logits.
+
+    Args:
+        logits: (B, V) float tensor, the logits at the last position only.
+        rng: a torch.Generator on the same device, so sampling is repeatable with a seed.
+        temperature: 0.0 = greedy (always the most likely token). Below 1 sharpens the
+            distribution (safer, more repetitive), above 1 flattens it (more varied, more mistakes).
+        top_k: only sample from the k most likely tokens (None = the whole vocabulary). This cuts
+            off the long tail of unlikely tokens that would otherwise be picked now and then.
+
+    Returns:
+        (B, 1) long tensor of token ids.
+
+    Order matters: the logits are divided by the temperature *before* the softmax. top-k is then
+    taken on the probabilities, and multinomial renormalizes the kept ones, which gives the same
+    distribution as taking top-k of the logits first.
+
+    Example (one row, logits [2.0, 1.0, 0.5, 3.0, -1.0], top_k=2, temperature 1.0):
+        probs [0.229, 0.084, 0.051, 0.624, 0.011] -> top-2 ids [3, 0] with [0.624, 0.229]
+        -> multinomial picks position 1 (27% chance after renormalizing) -> gather -> token id 0
+    """
     if temperature == 0.0:
         return logits.argmax(dim=-1, keepdim=True)
 
@@ -34,6 +55,26 @@ def sample_next_token(logits, rng, temperature=1.0, top_k=50):
 
 
 def use_calculator(expr):
+    """Safely evaluate a simple arithmetic expression the model wrote between python tokens.
+
+    Args:
+        expr: a string, e.g. "48/3" or "1,000*3".
+
+    Returns:
+        The result as a string, e.g. "16" or "3000", or None if the expression is refused or fails.
+
+    Safety: only the characters "0123456789+-*/.() " are allowed (all 23,716 GSM8K training calls
+    use only these), "**" is refused (9**9**9 would hang), and eval runs with no builtins.
+    Anything else, such as letters, names or __import__, returns None before eval is reached.
+
+    A float with no fractional part becomes an int, so "48/3" gives "16" rather than "16.0",
+    matching the training data. This reproduces 97.1% of GSM8K's results exactly; the rest
+    differ only in formatting, e.g. "20" where the data has "20.00".
+
+    Examples:
+        "2*12" -> "24"    "48/3" -> "16"    "5*2.5" -> "12.5"    "1,000*3" -> "3000"
+        "5/0" -> None     "2**100" -> None  "x+1" -> None        "()" -> None (not a number)
+    """
     expr = expr.replace(",", "")
     allowed = set("0123456789+-*/.() ")
     if not set(expr) <= allowed or "**" in expr:
@@ -56,6 +97,45 @@ def use_calculator(expr):
 
 @torch.no_grad()
 def generate(model, prompt_ids, num_samples=1, max_new_tokens=256, temperature=1.0, top_k=50, seed=42):
+    """Sample num_samples replies to one prompt, yielding one new token per reply at each step.
+
+    Used by chat_cli (1 sample, printed as it streams), rollout (16 samples per RL question)
+    and evaluate_gsm8k.
+
+    Args:
+        model: the uncompiled model; the sequence grows by one token every step.
+        prompt_ids: a list of ints, usually ending with <|assistant_start|>.
+        num_samples: how many independent replies (rows) to generate together in one batch.
+        max_new_tokens: the most tokens per reply; rows still running are cut off here.
+        temperature, top_k: passed to sample_next_token.
+        seed: for the sampling generator, so the same seed gives the same replies.
+
+    Each step:
+        1. Run the model on all rows, cropped to the last block_size (1024) tokens. There is no
+           KV cache, so the whole sequence is recomputed each time.
+        2. Sample one token per row, then choose each row's actual token:
+           - row finished: <|assistant_end|> as padding                        -> mask 0
+           - calculator result waiting: the next forced token, sample ignored -> mask 0
+           - otherwise: the sampled token                                     -> mask 1
+        3. Update each row's state from its sampled token:
+           - <|assistant_end|> or BOS: the row is done.
+           - <|python_start|>: start collecting a calculator expression.
+           - <|python_end|>: decode the collected tokens, call use_calculator, and queue
+             <|output_start|> result <|output_end|> to be forced in over the next steps
+             (nothing is queued if it returns None).
+           - any other token while collecting: add it to the expression.
+        4. Yield, then stop if every row is done; otherwise append the tokens and continue.
+
+    Yields:
+        (tokens, masks): two lists of num_samples ints, this step's token for each row and whether
+        the model chose it (1) or it was forced or padding (0). Only the new tokens are yielded,
+        not the whole sequence; the caller collects them. RL trains only on mask-1 tokens.
+
+    Example (one row, the model writes a calculator call):
+        sampled  <|python_start|> 48 / 3 <|python_end|>       mask 1 1 1 1 1
+        forced   <|output_start|> 16 <|output_end|>           mask 0 0 0
+        sampled  " #### 16" <|assistant_end|>                 mask 1 ... 1, then the row is done
+    """
     device = next(model.parameters()).device
     rng = torch.Generator(device=device).manual_seed(seed)
     x = torch.tensor([prompt_ids] * num_samples, dtype=torch.long, device=device)

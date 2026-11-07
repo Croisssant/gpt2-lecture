@@ -20,6 +20,41 @@ assert enc.n_vocab <= 50304
 
 
 def render_conversation(conversation, max_tokens=1025):
+    """Turn a conversation into token ids, plus a mask saying which tokens to train on.
+
+    Used by SFT (via chat_batches) to build training rows, and by render_for_completion and
+    chat_cli to build prompts.
+
+    Args:
+        conversation: {"messages": [{"role": ..., "content": ...}, ...]}. Roles must alternate
+            user, assistant, user, ..., optionally preceded by one system message.
+            - user content: a string.
+            - assistant content: a string, or a list of parts (GSM8K), each
+              {"type": "text" | "python" | "python_output", "text": str}.
+        max_tokens: cut both lists to this length. The default of 1025 is one SFT row
+            (T + 1). Pass a large number such as 10**7 to keep everything.
+
+    Returns:
+        (ids, mask): two lists of ints of equal length.
+        - mask 1: assistant text, python tool calls (<|python_start|>...<|python_end|>) and
+          <|assistant_end|>, i.e. everything the model must learn to produce, including when to stop.
+        - mask 0: BOS, user turns, <|assistant_start|> and calculator results
+          (<|output_start|>...<|output_end|>), which come from the user or the tool.
+
+    Layout:
+        <|endoftext|> <|user_start|> question <|user_end|> <|assistant_start|> reply <|assistant_end|> ...
+
+    Notes:
+        - A system message is merged into the first user message as system + "\\n\\n" + user,
+          on a deep copy, so the input is never modified.
+        - Text is encoded with encode_ordinary, so a literal "<|endoftext|>" typed by a user stays
+          plain text and is never read as a special token.
+
+    Example:
+        {"messages": [{"role": "user", "content": "Hi"}, {"role": "assistant", "content": "Hello!"}]}
+        -> tokens: <|endoftext|> <|user_start|> Hi <|user_end|> <|assistant_start|> Hello ! <|assistant_end|>
+           mask:   0             0              0  0            0                   1     1 1
+    """
     messages = conversation["messages"]
 
     # Check if message begins with System Message
@@ -35,6 +70,7 @@ def render_conversation(conversation, max_tokens=1025):
         assert message["role"] == expected_role, f"Message {idx} is from {message['role']}, expected {expected_role}"
     
     def add_tokens(token_ids, mask_value):
+        """Append one id or a list of ids to `ids`, and the same number of `mask_value`s to `mask`."""
 
         if isinstance(token_ids, int):
             token_ids = [token_ids]
@@ -89,6 +125,23 @@ def render_conversation(conversation, max_tokens=1025):
 
 
 def render_for_completion(conversation):
+    """Build the prompt the model answers from: the conversation without its last reply.
+
+    Used at eval time (evaluate_categorical, evaluate_gsm8k) and in RL (rollout), where the
+    task's conversation contains the reference answer that the model must not see.
+
+    Args:
+        conversation: as for render_conversation. The last message must be from the assistant.
+
+    Returns:
+        A list of token ids: the rendered conversation minus its last assistant message,
+        followed by <|assistant_start|>, so the model's next token begins its answer.
+        The input is not modified, and there is no mask (nothing is trained on here).
+
+    Example:
+        {"messages": [{"role": "user", "content": "Hi"}, {"role": "assistant", "content": "Hello!"}]}
+        -> decoded: <|endoftext|><|user_start|>Hi<|user_end|><|assistant_start|>
+    """
     assert conversation["messages"][-1]["role"] == "assistant", "Role for last message should be assistant"
 
     conversation = copy.deepcopy(conversation)

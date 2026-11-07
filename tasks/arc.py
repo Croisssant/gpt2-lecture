@@ -2,6 +2,18 @@ import datasets
 from tasks.common import render_mc
 
 class ARC:
+    """Grade-school science multiple-choice questions (allenai/ai2_arc). Used only as an eval.
+
+    Args:
+        subset: "ARC-Easy" (2,376 test questions) or "ARC-Challenge" (1,172).
+        split: "train", "validation" or "test".
+
+    Unlike MMLU, the labels vary from question to question: most use "ABCD", but some use
+    "1234", "ABC", "ABCDE" or "123". Each conversation therefore carries its own labels in
+    "letters", and the random-guess baseline is only roughly 0.25. ARC is never in the SFT mix,
+    so its scores are the fairest measure of what SFT taught.
+    """
+
     def __init__(self, subset, split):
         assert split in ["train", "validation", "test"], "Split can only be either train, validation or test"
         assert subset in ["ARC-Easy", "ARC-Challenge"], "Only ARC-Easy or ARC-Challenge allowed in subset"
@@ -12,6 +24,13 @@ class ARC:
         return len(self.ds)
 
     def __getitem__(self, index):
+        """Return one question as a two-message conversation, plus that question's own labels.
+
+        Returns:
+            {"messages": [{"role": "user", "content": render_mc(question, labels, choices)},
+                          {"role": "assistant", "content": answerKey}],   # e.g. "B" or "2"
+             "letters": labels}                                           # e.g. ["1", "2", "3", "4"]
+        """
         ds_row = self.ds[index]
         labels = ds_row["choices"]["label"]
         choices = ds_row["choices"]["text"]
@@ -28,8 +47,9 @@ class ARC:
         }
 
     def evaluate(self, conversation, completion):
+        """Return 1 if completion is exactly this question's answer label (e.g. "B" or "2"), else 0."""
         return int(conversation["messages"][-1]["content"] == completion)
-    
+
 if __name__ == "__main__":
     from gpt.chat_tokenizer import render_conversation, enc
 

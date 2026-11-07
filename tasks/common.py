@@ -1,6 +1,28 @@
 import random
 
 def render_mc(question:str, letters:str|list[str], choices:list[str]) -> str:
+    """Format a multiple-choice question as the user message for MMLU and ARC.
+
+    Args:
+        question: the question text.
+        letters: one label per choice, e.g. "ABCD" or ARC's ["1", "2", "3", "4"]. Each must be
+            a single token, because evaluate_categorical reads one logit per label.
+        choices: the answer texts, in the same order as letters.
+
+    Returns:
+        A string in nanochat's format. Each choice is written as "choice=letter", with the letter
+        *after* the text, so the model has read the choice before it sees which letter it belongs to.
+
+    Example:
+        render_mc("Find the degree for ... over Q.", "ABCD", ["0", "4", "2", "6"])
+        ->  Multiple Choice question: Find the degree for ... over Q.
+            - 0=A
+            - 4=B
+            - 2=C
+            - 6=D
+
+            Respond only with the letter of the correct answer.
+    """
     rendered = [f"Multiple Choice question: {question}\n"]
 
     for letter, choice in zip(letters, choices):
@@ -12,6 +34,25 @@ def render_mc(question:str, letters:str|list[str], choices:list[str]) -> str:
 
 
 class TaskMixture:
+    """Combine several tasks into one shuffled task, so SFT sees a mix rather than one dataset at a time.
+
+    Args:
+        tasks: a list of tasks (anything with len() and [i]). Listing a task several times repeats
+            it, which is how the SFT mix gives MMLU 3 epochs and GSM8K 4:
+            TaskMixture([smoltalk] + [mmlu] * 3 + [gsm8k] * 4) -> 789,759 conversations.
+
+    How it works:
+        index_map lists every (task_idx, local_idx) pair once, then shuffles it with a fixed seed
+        (42), so the order is the same on every run and every machine. mixture[i] looks up pair i
+        and returns that task's conversation. Nothing is copied or loaded in advance.
+
+    Example:
+        TaskMixture([["a0", "a1", "a2"], ["b0", "b1"]]) -> items in order: b0, a1, a2, b1, a0
+
+    To train on a subset, cut index_map, e.g. mixture.index_map = mixture.index_map[:20000]
+    (this is what chat_sft's --limit does).
+    """
+
     def __init__(self, tasks):
         self.tasks = tasks
         self.index_map = [(task_idx, local_idx) for task_idx, task in enumerate(tasks) for local_idx in range(len(task))]

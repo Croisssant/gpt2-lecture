@@ -3,6 +3,34 @@ from gpt.chat_tokenizer import render_for_completion, enc, bos, special_token_id
 
 @torch.no_grad()
 def evaluate_categorical(model, task, device, batch_size=8, max_examples=None):
+    """Multiple-choice accuracy (MMLU, ARC): pick the answer letter the model scores highest.
+
+    Rather than letting the model generate freely (it might write "The answer is B" or
+    something invalid), this reads the model's prediction for the very first answer token and
+    compares only the allowed letters. One forward pass per batch, no sampling.
+
+    Args:
+        model: the *uncompiled* model. Prompt lengths change from batch to batch, which would
+            make a compiled model recompile.
+        task: a task whose conversations include "letters", with an evaluate method.
+        device: where to run.
+        batch_size: questions per forward pass.
+        max_examples: only use the first N questions (None = all). SFT uses 1000 during
+            training to keep evals quick.
+
+    What it does, for each batch:
+        1. Build each prompt with render_for_completion (it ends with <|assistant_start|>).
+        2. Pad the shorter prompts on the right with BOS, so they stack into one (B, T) tensor.
+           Padding on the right is safe: attention is causal, so a prompt's last real position
+           never sees the padding after it.
+        3. Run the model, and for each row take the logits at position len(prompt) - 1, i.e. the
+           prediction for the token after <|assistant_start|>.
+        4. Keep only the logits of that question's letter tokens and take the argmax.
+        5. task.evaluate(conversation, predicted_letter) gives 1 or 0.
+
+    Returns:
+        Accuracy, a float between 0 and 1. Random guessing scores about 0.25.
+    """
     num_examples = len(task) if max_examples is None else min(max_examples, len(task))
     num_correct = 0
 

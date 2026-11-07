@@ -1,6 +1,22 @@
 import datasets
 
 class SmolTalk:
+    """General multi-turn chat conversations (HuggingFaceTB/smol-smoltalk), the bulk of the SFT mix.
+
+    Teaches the chat format itself: answering, following instructions, and ending each reply with
+    <|assistant_end|>.
+
+    Args:
+        split: "train" (460,341 conversations) or "test" (24,229, used for SFT validation loss).
+
+    The rows are shuffled once with seed 42. ds[i]["messages"] is already in our format, may start
+    with a system message, and can have many turns; 39.8% are longer than 1025 tokens, which
+    trim_to_last_reply handles. A few train conversations end on a user message.
+
+    There is no evaluate method: open-ended chat has no single right answer, so SmolTalk is only
+    measured through validation loss.
+    """
+
     def __init__(self, split):
         assert split in ["train", "test"], "Split can only be either train or test"
         data = datasets.load_dataset("HuggingFaceTB/smol-smoltalk", split=split)
@@ -10,6 +26,7 @@ class SmolTalk:
         return len(self.ds)
 
     def __getitem__(self, index):
+        """Return {"messages": [...]}, the conversation at this index, with the dataset's other fields dropped."""
         return {"messages": self.ds[index]["messages"]}
 
 

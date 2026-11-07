@@ -14,11 +14,43 @@ from tasks.arc import ARC
 from tasks.gsm8k import GSM8K
 
 def get_sft_lr(progress, init_lr, warmdown_ratio=0.5):
+    """SFT learning rate: constant, then a straight line down to 0 (nanochat's "warmdown").
+
+    Args:
+        progress: how far through training, step / num_steps, from 0 to 1.
+        init_lr: the constant learning rate, init_lr_frac * the pretraining peak (6e-4).
+        warmdown_ratio: the fraction of training at the end that decays.
+
+    Returns:
+        init_lr for the first (1 - warmdown_ratio) of training, then decreasing linearly to 0 at
+        progress = 1. There's no warmup: the optimizer state is loaded from pretraining, so its
+        Adam moments are already settled.
+
+    Example (init_lr=1.0, warmdown_ratio=0.5):
+        progress 0.0 -> 1.0,  0.5 -> 1.0,  0.75 -> 0.5,  1.0 -> 0.0
+    """
     return init_lr * (1 - progress) / warmdown_ratio if progress > 1 - warmdown_ratio else init_lr
 
 
 @torch.no_grad()
 def evaluate_val_loss(model, task, B, T, device, num_batches=20):
+    """Average SFT loss on held-out conversations, counting only assistant tokens.
+
+    Args:
+        model: the compiled model is fine here, because every batch has the same (B, T) shape.
+        task: the validation task (SmolTalk test + MMLU test + GSM8K test).
+        B, T: batch shape, the same as training.
+        device: where to run.
+        num_batches: how many batches to average (20 x 32 x 1024, about 650K tokens).
+
+    Returns:
+        The mean of the per-batch losses, a float. Uses bf16 autocast, no gradients, and puts the
+        model back in train mode before returning. Always reads the same first num_batches
+        batches, so values from different steps are comparable.
+
+    This is not comparable to pretraining's val loss: it's measured on chat data and only on the
+    reply tokens (mask 1), which are easier to predict. The SFT run fell from 2.43 to 1.19.
+    """
     model.eval()
     device_type = "cuda" if "cuda" in device else device
     total_loss = 0.0
@@ -42,6 +74,26 @@ def evaluate_val_loss(model, task, B, T, device, num_batches=20):
 
 
 def sft_step(model, optimizer, batches, grad_accum_steps, lr, device):
+    """One optimizer step: accumulate gradients over several batches, then update the weights.
+
+    Args:
+        model: the model to train (compiled or not).
+        optimizer: AdamW from configure_optimizers.
+        batches: a chat_batches generator; exactly grad_accum_steps batches are taken from it.
+        grad_accum_steps: batches per step, total_batch_size // (B * T) = 16 for SFT.
+        lr: the learning rate for this step (from get_sft_lr); set on every param group.
+        device: where to run.
+
+    What it does:
+        zero_grad -> for each batch: forward in bf16, divide the loss by grad_accum_steps,
+        backward -> clip the gradient norm to 1.0 -> optimizer.step().
+        Dividing the loss makes the summed gradients an average, so the gradient's size doesn't
+        grow with the number of accumulated batches (without it, the norm was 16x too big).
+
+    Returns:
+        (loss, norm): the mean loss over the batches, and the gradient norm before clipping.
+        A norm far above 1.0 means clipping is active, and the learning rate may be too high.
+    """
     device_type = "cuda" if "cuda" in device else device
 
     for group in optimizer.param_groups:
@@ -68,6 +120,23 @@ def sft_step(model, optimizer, batches, grad_accum_steps, lr, device):
 
 
 def run_evals(model, core_model, val_task, eval_tasks, B, T, device, max_examples=None):
+    """Run every SFT eval: validation loss, each multiple-choice task, and the ChatCORE summary.
+
+    Args:
+        model: the compiled model, used for validation loss (fixed shapes).
+        core_model: the uncompiled model with the same weights, used for multiple choice
+            (variable shapes). They share parameters, so both reflect the current training state.
+        val_task: for evaluate_val_loss.
+        eval_tasks: {name: task}, e.g. {"MMLU": ..., "ARC-Easy": ..., "ARC-Challenge": ...}.
+        B, T, device: as for training.
+        max_examples: questions per multiple-choice task (None = all).
+
+    Returns:
+        {"val_loss": ..., "<task name>": accuracy, ..., "chatcore": ...}, in that order.
+        chatcore is the mean *centered* accuracy (acc - 0.25) / 0.75: 0 means random guessing,
+        1 means perfect, and below 0 means worse than random. Centering lets tasks with different
+        baselines be averaged fairly (nanochat also includes generative tasks with baseline 0).
+    """
     results = {"val_loss": evaluate_val_loss(model, val_task, B, T, device)}
     centered = []
 
@@ -84,6 +153,47 @@ def run_evals(model, core_model, val_task, eval_tasks, B, T, device, max_example
 def train_sft(checkpoint_path, train_task, val_task, eval_tasks, log_dir, device,
               B=32, T=1024, total_batch_size=524288, max_lr=6e-4, init_lr_frac=0.8,
               eval_every=100, max_examples=None, use_compile=False):
+    """Supervised fine-tuning: continue training a pretrained model on conversations, for one epoch.
+
+    The loop is pretraining's, with these differences:
+        - data: packed conversations from chat_batches, with non-assistant targets set to -1.
+        - learning rate: init_lr_frac * max_lr, constant then decaying to 0 (get_sft_lr), no warmup.
+        - optimizer: the same AdamW, continuing from the checkpoint's state, but weight decay is 0.
+        - length: one pass over train_task rather than a token budget. Single GPU, no DDP.
+
+    Args:
+        checkpoint_path: the pretraining checkpoint; it must contain "optimizer".
+        train_task, val_task: from build_tasks.
+        eval_tasks: {name: task} of multiple-choice tasks for run_evals.
+        log_dir: a new folder. It's created, and must not already contain log.txt, so an
+            earlier run's log is never overwritten.
+        device: "cuda", "mps" or "cpu".
+        B, T: rows per batch and tokens per row.
+        total_batch_size: tokens per optimizer step (524,288 = 2**19, as in pretraining), so
+            grad_accum_steps = total_batch_size // (B * T) = 16.
+        max_lr: the pretraining peak learning rate.
+        init_lr_frac: the SFT learning rate as a fraction of max_lr. The sweep found 0.8 best
+            (of 0.1, 0.3, 0.8).
+        eval_every: run run_evals every this many steps.
+        max_examples: questions per multiple-choice task during training (the final eval uses all).
+        use_compile: torch.compile the model for training and validation loss (CUDA only).
+
+    What it does:
+        1. Load the model and optimizer state, then set weight decay to 0. load_state_dict
+           restores the saved weight decay of 0.1, so it has to be reset after loading.
+        2. Count the batches in one pass to get num_steps (761 steps for the full mix).
+        3. Each step: evaluate every eval_every steps, set the lr, run sft_step, print and log.
+        4. Run a final full eval and save model_sft.pt.
+
+    Log lines (log_dir/log.txt): "<step> train <loss>" every step, and "<step> <name> <value>"
+    for each eval result.
+
+    Returns:
+        (core_model, optimizer, results), where results is the final run_evals dict.
+
+    Saves log_dir/model_sft.pt with {"model", "config", "step", "results"}, without the
+    optimizer state (it would add about 1 GB), so RL starts with a fresh optimizer.
+    """
 
     # Set up logging
     os.makedirs(log_dir, exist_ok=True)
@@ -141,6 +251,16 @@ def train_sft(checkpoint_path, train_task, val_task, eval_tasks, log_dir, device
 
 
 def build_tasks():
+    """Build the SFT datasets, following nanochat's mix.
+
+    Returns:
+        train_task: TaskMixture of SmolTalk train + MMLU auxiliary_train x3 + GSM8K train x4,
+            789,759 conversations. Repeating the smaller tasks gives them more weight.
+        val_task: TaskMixture of SmolTalk, MMLU and GSM8K test, for validation loss (39,590).
+        eval_tasks: {"MMLU": test, "ARC-Easy": test, "ARC-Challenge": test} for multiple choice.
+
+    Loading downloads the datasets on first use; Hugging Face caches them afterwards.
+    """
     smol = SmolTalk("train")
     mmlu = MMLU("auxiliary_train")
     gsm = GSM8K("train")
@@ -153,6 +273,7 @@ def build_tasks():
 
 
 def run_tests():
+    """Test every SFT function on tiny models and fake tasks, on the CPU. Run with --test."""
     import math
     import copy
     import itertools

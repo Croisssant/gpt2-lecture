@@ -6,6 +6,28 @@ from gpt.engine import generate, ASSISTANT_END
 from gpt.chat_tokenizer import enc, render_conversation, special_token_ids
 
 def chat(model, temperature=0.6, top_k=50, max_new_tokens=512):
+    """Chat with the model in the terminal, streaming each reply as it's generated.
+
+    Args:
+        model: an SFT model in eval mode.
+        temperature, top_k: sampling settings for generate. 0.6 gives fairly focused replies;
+            raise it for more variety.
+        max_new_tokens: the longest reply in tokens.
+
+    Each turn:
+        1. Read a line. "quit"/"exit" stops, "clear" starts a new conversation, empty input is ignored.
+        2. Add it to the conversation as a user message.
+        3. Render the whole conversation and append <|assistant_start|>.
+        4. Print tokens from generate as they arrive, stopping at <|assistant_end|>.
+        5. Add the reply to the conversation as an assistant message, so the next turn sees it.
+
+    Known limitations:
+        - The context is only 1024 tokens. Once the conversation outgrows it, generate keeps only
+          the last 1024 tokens, and the model starts giving empty replies. Type "clear" to reset.
+        - Tokens are decoded one at a time, so characters that span several tokens, such as
+          emoji, can print as "�".
+        - A calculator call in a reply is saved back into the history as plain text.
+    """
     conversation = {"messages": []}
 
     while True:

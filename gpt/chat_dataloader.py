@@ -2,6 +2,28 @@ import torch
 from gpt.chat_tokenizer import special_token_ids, render_conversation, bos
 
 def trim_to_last_reply(ids, mask, max_tokens):
+    """Cut a rendered conversation so it fits in max_tokens and still ends on a complete reply.
+
+    Plain truncation at max_tokens could stop mid-reply, and in MMLU could even cut off the answer
+    letter, leaving a question with no answer to learn. Instead, keep everything up to and
+    including the last <|assistant_end|> that fits.
+
+    Args:
+        ids, mask: from render_conversation(..., max_tokens=10**7), so nothing is cut yet.
+        max_tokens: the longest allowed result, i.e. one row (T + 1 = 1025).
+
+    Returns:
+        (ids, mask) cut just after the last <|assistant_end|> within the first max_tokens tokens,
+        or None if not even the first reply fits; the caller then skips the conversation
+        (1.16% of the SFT mix).
+
+    Also removes a trailing user message that has no reply (258 SmolTalk conversations end that way).
+
+    Example (conversation: "Hi there" / "Hello!" / "Bye" / "See you.", 18 tokens, first reply ends at index 8):
+        max_tokens=100 -> all 18 tokens
+        max_tokens=12  -> ids[:9], only the first exchange
+        max_tokens=8   -> None
+    """
     smaller = min(len(ids), max_tokens)
 
     for i in range(smaller - 1, 0, -1):
@@ -12,6 +34,30 @@ def trim_to_last_reply(ids, mask, max_tokens):
 
 
 def pack_row(buffer, row_len, pad):
+    """Fill one training row with whole conversations from the buffer (best-fit packing).
+
+    Conversations are short (often 100-500 tokens) but a row is 1025, so padding each one to a
+    full row would waste most of the batch. Packing several per row keeps the GPU busy. Each
+    conversation starts with its own BOS, so the model can tell where one ends and the next begins.
+
+    Args:
+        buffer: a list of (ids, mask) pairs, each at most row_len long. Modified in place:
+            conversations placed in the row are popped out.
+        row_len: the row length, T + 1.
+        pad: the token used to fill leftover space (BOS).
+
+    What it does:
+        Repeatedly pick the longest conversation that still fits in the remaining space, pop it
+        and append it. When nothing fits, pad the rest with `pad` (mask 0, so it isn't trained on).
+
+    Returns:
+        (row_ids, row_mask): two lists of exactly row_len ints.
+
+    Example (row_len=1025, buffer lengths [600, 300, 200, 50]):
+        take 600 (425 left) -> take 300, the longest that fits (125 left) -> take 50 (75 left)
+        -> 200 no longer fits, so pad 75
+        row = 600 + 300 + 50 + 75 padding; the 200 stays in the buffer for the next row
+    """
     row_ids, row_mask = [], []
 
     while True:
@@ -36,6 +82,28 @@ def pack_row(buffer, row_len, pad):
 
 
 def build_xy(rows):
+    """Turn packed rows into the model's inputs x and targets y, ignoring tokens with mask 0.
+
+    Used by chat_batches for SFT and by rollout for RL.
+
+    Args:
+        rows: a list of B (ids, mask) pairs, all of the same length L.
+
+    Returns:
+        x: (B, L-1) long tensor, ids[:, :-1], what the model reads.
+        y: (B, L-1) long tensor, ids[:, 1:], the next token at each position, set to -1 wherever
+           the *target's* mask is 0. The model's cross_entropy uses ignore_index=-1, so those
+           positions add nothing to the loss: the model is never trained to predict user text,
+           BOS, padding or calculator output.
+        Both are on the CPU; the caller moves them to the device.
+
+    Example:
+        ids  = [BOS, <|user_start|>, Hi, there, <|user_end|>, <|assistant_start|>, Hello, !, <|assistant_end|>]
+        mask = [0,   0,              0,  0,     0,            0,                   1,     1, 1]
+        x    = [BOS, <|user_start|>, Hi, there, <|user_end|>, <|assistant_start|>, Hello, !]
+        y    = [-1,  -1,             -1, -1,    -1,           Hello,               !,     <|assistant_end|>]
+        The mask is shifted with the targets, so "Hello" is predicted from <|assistant_start|>.
+    """
     tensor_ids = torch.tensor([row_ids for row_ids, _ in rows], dtype=torch.long)
     tensor_masks = torch.tensor([row_mask for _, row_mask in rows], dtype=torch.long)
 
@@ -47,6 +115,35 @@ def build_xy(rows):
 
 
 def chat_batches(task, B, T, buffer_size=100):
+    """Generate packed (x, y) SFT batches from a task, one pass over it in order.
+
+    The SFT replacement for pretraining's DataLoaderLite: instead of cutting one long token stream
+    into rows, it packs whole conversations into rows so that every row starts at a conversation
+    boundary and only assistant tokens are trained on.
+
+    Args:
+        task: anything with len() and [i] returning a conversation (a task, TaskMixture or list).
+        B: rows per batch.
+        T: tokens per row seen by the model; rows are built T + 1 long so x and y are each T.
+        buffer_size: how many conversations to keep ready for pack_row to choose from. Bigger
+            means tighter packing but more memory; 100 gives about 55% graded tokens on the SFT mix.
+
+    What it does:
+        1. Top the buffer up to buffer_size: render each conversation in full, trim it with
+           trim_to_last_reply (skipping any that return None) and add it.
+        2. Build one row with pack_row.
+        3. Every B rows, yield build_xy(rows).
+        Stops when the task and the buffer are both empty. A final incomplete batch is dropped.
+
+    Yields:
+        (x, y): each a (B, T) long tensor on the CPU, with y = -1 where nothing is trained.
+
+    Notes:
+        - It's a generator, so nothing is computed until you loop over it; each new call starts
+          again from the first conversation.
+        - The task's order is used as-is, so shuffle in the task (TaskMixture does).
+        - Full SFT mix with B=32, T=1024: 12,178 batches, about 399M tokens.
+    """
     row_len = T + 1
     buffer, rows = [], []
     index = 0
