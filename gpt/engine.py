@@ -193,6 +193,62 @@ def generate(model, prompt_ids, num_samples=1, max_new_tokens=256, temperature=1
         x = torch.cat([x, torch.tensor(tokens, device=device).view(-1, 1)], dim=1)
 
 
+class KVCache:
+    """Stores every layer's keys and values, so generate only computes the newest token each step.
+
+    Without a cache, each step re-runs the whole sequence, even though the keys and values of
+    earlier tokens never change. With one, the prompt is processed once ("prefill"), and each later
+    step feeds in a single token, whose k and v are appended here.
+
+    Args:
+        num_layers: one slot per transformer block (12 for GPT-2 124M).
+        max_len: the most tokens the cache can hold, prompt included. GPT-2's learned positions
+            stop at block_size (1024), so it can never be more than that.
+
+    Attributes:
+        pos: how many tokens are stored. insert writes at pos but does not move it, because all
+            layers insert at the same position; GPT.forward adds T after the last layer.
+        k, v: lists of per-layer tensors (B, n_head, max_len, head_size), allocated on a layer's
+            first insert, so they take that call's dtype (bf16 under autocast) and device.
+
+    insert(layer_idx, k, v), with k and v of shape (B, n_head, T, head_size):
+        1. Several tokens at once (T > 1) are only allowed into an empty cache, i.e. the prompt.
+            Afterwards it's one token per step, which keeps the attention mask simple.
+        2. Writes k and v into positions pos .. pos+T-1 of that layer.
+        3. Returns that layer's k and v for positions 0 .. pos+T-1, everything the new tokens
+            may attend to.
+
+    Example (150-token prompt, 16 samples, max_len 406):
+        prefill: insert(0, k (16,12,150,64), v) -> (16,12,150,64); GPT.forward then sets pos = 150
+        step 1:  insert(0, k (16,12,1,64), v)   -> (16,12,151,64)
+
+    Gotcha: once full, it can't slide like the old cropping did. Each cached k and v was computed
+    with its token's position embedding built in, so shifting them would make every one wrong.
+    """
+
+    def __init__(self, num_layers, max_len):
+        self.pos = 0
+        self.k = [None] * num_layers
+        self.v = [None] * num_layers
+        self.max_len = max_len
+        
+
+    def insert(self, layer_idx, k, v):
+        B, num_heads, T, head_size = k.shape
+        assert T == 1 or self.pos == 0, "Only one token at a time is allowed to be inserted after the prompt"
+        assert self.pos + T <= self.max_len, f"Context length has exceeded the allowed max length, ({self.pos} + {T} > {self.max_len})"
+
+        if self.k[layer_idx] is None:
+            self.k[layer_idx] = torch.zeros((B, num_heads, self.max_len, head_size), dtype=k.dtype, device=k.device)
+            self.v[layer_idx] = torch.zeros((B, num_heads, self.max_len, head_size), dtype=v.dtype, device=v.device)
+
+    
+        self.k[layer_idx][:, :, self.pos:self.pos + T] = k
+        self.v[layer_idx][:, :, self.pos:self.pos + T] = v
+
+        return self.k[layer_idx][:, :, 0:self.pos + T], self.v[layer_idx][:, :, 0:self.pos + T]
+
+    
 if __name__ == "__main__":
     logits = torch.tensor([[2.0, 1.0, 0.5, 3.0, -1.0],
                            [0.0, 5.0, 0.0, 0.0, 4.0]])
@@ -309,5 +365,62 @@ if __name__ == "__main__":
     tokens, _ = run([[FILLER, bos, FILLER]])
     assert tokens[0] == [FILLER, bos]
 
+    
+    # --- KVCache ---
+    torch.manual_seed(0)
+    cache = KVCache(num_layers=2, max_len=10)
+    assert cache.pos == 0 and cache.k == [None, None]
+
+    # The prompt: 5 tokens, 3 rows, 4 heads, head size 8
+    k, v = torch.randn(3, 4, 5, 8), torch.randn(3, 4, 5, 8)
+    k_all, v_all = cache.insert(0, k, v)
+    assert k_all.shape == (3, 4, 5, 8) and torch.equal(k_all, k) and torch.equal(v_all, v)
+    assert cache.k[0].shape == (3, 4, 10, 8)    # room for max_len tokens is allocated up front
+    assert cache.k[1] is None                    # each layer allocates on its own first insert
+    assert cache.pos == 0                        # insert doesn't move pos; GPT.forward does
+    cache.insert(1, k, v)
+    cache.pos += 5
+
+    # One new token: returns the prompt's keys followed by the new one
+    k1, v1 = torch.randn(3, 4, 1, 8), torch.randn(3, 4, 1, 8)
+    k_all, v_all = cache.insert(0, k1, v1)
+    assert k_all.shape == (3, 4, 6, 8)
+    assert torch.equal(k_all[:, :, :5], k) and torch.equal(k_all[:, :, 5:], k1)
+    assert torch.equal(v_all[:, :, :5], v) and torch.equal(v_all[:, :, 5:], v1)
+
+    # Layers are kept separately: layer 1 still holds only what was inserted into it
+    k_all1, _ = cache.insert(1, k1 * 0, v1 * 0)
+    assert torch.equal(k_all1[:, :, :5], k) and torch.equal(k_all1[:, :, 5:], k1 * 0)
+    cache.pos += 1
+
+    # More than one token into a cache that isn't empty is refused
+    try:
+        cache.insert(0, torch.randn(3, 4, 2, 8), torch.randn(3, 4, 2, 8))
+        raise RuntimeError("should have failed")
+    except AssertionError:
+        pass
+
+    # A prompt longer than max_len is refused
+    try:
+        KVCache(1, 4).insert(0, torch.randn(1, 1, 5, 2), torch.randn(1, 1, 5, 2))
+        raise RuntimeError("should have failed")
+    except AssertionError:
+        pass
+
+    # Filling up one token at a time stops exactly at max_len
+    small = KVCache(1, 3)
+    for _ in range(3):
+        small.insert(0, torch.randn(1, 1, 1, 2), torch.randn(1, 1, 1, 2))
+        small.pos += 1
+    try:
+        small.insert(0, torch.randn(1, 1, 1, 2), torch.randn(1, 1, 1, 2))
+        raise RuntimeError("should have failed")
+    except AssertionError:
+        pass
+
+    # The cache takes the dtype of the first keys it sees (bf16 under autocast)
+    bf = KVCache(1, 4)
+    k_all, _ = bf.insert(0, torch.randn(1, 2, 3, 4, dtype=torch.bfloat16), torch.randn(1, 2, 3, 4, dtype=torch.bfloat16))
+    assert bf.k[0].dtype == torch.bfloat16 and k_all.dtype == torch.bfloat16
 
     print("all tests passed")
