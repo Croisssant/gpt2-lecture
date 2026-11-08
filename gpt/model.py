@@ -25,7 +25,29 @@ class CausalSelfAttention (nn.Module):
         # Not really a 'bias', more of a mask, but following the OpenAI/HF naming though
         self.register_buffer('bias', torch.tril(torch.ones(config.block_size, config.block_size)).view(1, 1, config.block_size, config.block_size))
 
-    def forward(self, x):
+    def forward(self, x, kv_cache=None, layer_idx=None):
+        """Multi-head causal self-attention, optionally reading earlier keys and values from a KV cache.
+
+        Args:
+            x: (B, T, C). Without a cache, the whole sequence (training, rl_loss). With one, the
+                prompt on the first call (prefill), then T = 1, just the newest token.
+            kv_cache: a KVCache from gpt.engine, or None. If given, this call's k and v are stored
+                in it, and attention runs against every key and value cached so far.
+            layer_idx: this block's index, so the cache uses the right slot.
+
+        Returns:
+            (B, T, C), the same as without a cache.
+
+        The mask: is_causal=T > 1, not True. With one new token, q has 1 row but k has pos+1, and
+        PyTorch lines a causal mask up top-left, so that row would only see position 0. One token
+        may see everything before it, so it needs no mask. T > 1 only happens with an empty cache
+        or none, where q and k have the same length and the usual causal mask is right.
+
+        Example (150-token prompt, then one step, 16 samples):
+            prefill: x (16,150,768) -> k,v after insert (16,12,150,64) -> causal       -> (16,150,768)
+            step 1:  x (16,1,768)   -> k,v after insert (16,12,151,64) -> no mask      -> (16,1,768)
+        """
+
         B, T, C = x.size() # Batch Size, Sequence Length, Embedding Dimensionality (n_embd)
 
         # Calculate Query, Key and Value for all heads in batch and move head forward to be the batch dim
@@ -42,9 +64,12 @@ class CausalSelfAttention (nn.Module):
         # att = att.masked_fill(self.bias[:, :, :T, :T] == 0, float('-inf'))
         # att = F.softmax(att, dim=-1)
         # y = att @ v # (B, nh, T, T) x (B, nh, T, hs) -> (B, nh, T, hs)
-        
+    
+        if kv_cache is not None:
+            k, v = kv_cache.insert(layer_idx, k, v)
+
         # Replaced the above 4 lines with Flash Attention
-        y = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        y = F.scaled_dot_product_attention(q, k, v, is_causal=T > 1)
 
         y = y.transpose(1, 2).contiguous().view(B, T, C) # Re-assemble all head outputs side by side
 

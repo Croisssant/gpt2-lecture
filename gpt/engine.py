@@ -423,4 +423,29 @@ if __name__ == "__main__":
     k_all, _ = bf.insert(0, torch.randn(1, 2, 3, 4, dtype=torch.bfloat16), torch.randn(1, 2, 3, 4, dtype=torch.bfloat16))
     assert bf.k[0].dtype == torch.bfloat16 and k_all.dtype == torch.bfloat16
 
+
+    # --- CausalSelfAttention with a KV cache ---
+    from gpt.model import GPTConfig, CausalSelfAttention
+
+    torch.manual_seed(0)
+    attn = CausalSelfAttention(GPTConfig(block_size=16, n_head=2, n_embd=8)).eval()
+    x = torch.randn(3, 6, 8)    # 3 rows, 6 tokens
+    full = attn(x)               # no cache: the whole sequence at once, as in training
+
+    # Prefill: the first 4 tokens through an empty cache match the no-cache output
+    cache = KVCache(num_layers=1, max_len=16)
+    out = attn(x[:, :4], kv_cache=cache, layer_idx=0)
+    cache.pos += 4
+    assert out.shape == (3, 4, 8) and torch.allclose(out, full[:, :4], atol=1e-6)
+
+    # Then one token at a time: each matches its row of the full output, so it saw every earlier token
+    for t in range(4, 6):
+        out = attn(x[:, t:t + 1], kv_cache=cache, layer_idx=0)
+        cache.pos += 1
+        assert out.shape == (3, 1, 8) and torch.allclose(out, full[:, t:t + 1], atol=1e-6), t
+
+    # The cache now holds keys for all 6 positions, and nothing after them
+    assert cache.k[0][:, :, :6].abs().sum() > 0 and cache.k[0][:, :, 6:].abs().sum() == 0
+
+
     print("all tests passed")
