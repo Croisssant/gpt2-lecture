@@ -1,0 +1,3 @@
+# 2026-11-08 16:30 mps run_logs/rl_lr5e-6/model_rl.pt, 5 GSM8K prompts, greedy, max_new_tokens 256, no_cache = generate from 262586f
+mps samples 1 prompts 5 tokens 368 | no_cache 2.41s 153 tok/s | cache 0.88s 419 tok/s | speedup 2.7x | identical steps 368/368
+mps samples 16 prompts 5 tokens 5888 | no_cache 16.71s 352 tok/s | cache 1.85s 3191 tok/s | speedup 9.1x | identical steps 368/368
