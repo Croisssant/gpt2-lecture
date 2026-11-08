@@ -111,7 +111,7 @@ class Block(nn.Module):
         self.ln_2 = nn.LayerNorm(config.n_embd)
         self.mlp = FeedForward(config)
 
-    def forward(self, x):
+    def forward(self, x, kv_cache=None, layer_idx=None):
         # The residual pathway (also called the residual stream) is the main path that x takes from the embeddings straight to lm_head.
         # Fork off, compute some computation and come back
         """
@@ -140,7 +140,7 @@ class Block(nn.Module):
      lm_head
 
         """
-        x = x + self.attn(self.ln_1(x))
+        x = x + self.attn(self.ln_1(x), kv_cache, layer_idx)
         x = x + self.mlp(self.ln_2(x))
         return x
 
@@ -193,18 +193,50 @@ class GPT(nn.Module):
         elif isinstance(module, nn.Embedding):
             torch.nn.init.normal_(module.weight, mean=0.0, std=std)
 
-    def forward(self, idx, targets=None, loss_reduction="mean"):
+    def forward(self, idx, targets=None, loss_reduction="mean", kv_cache=None):
+        """Run the model on idx and return logits, plus the loss if targets are given.
+
+        Args:
+            idx: (B, T) token ids. Without a cache, the whole sequence. With one, the prompt on the
+                first call, then one new token per call.
+            targets: (B, T) next-token ids, -1 = ignored (prompt, padding). None = no loss.
+            loss_reduction: "mean" (training) or "none" (one loss per token, (B, T), for RL).
+            kv_cache: a KVCache from gpt.engine, or None (training, rl_loss, evaluate_categorical).
+
+        With a cache:
+            - Positions start at kv_cache.pos, not 0, so a new token gets the same position
+              embedding it would have had in the full sequence.
+            - Each block gets its index, so it stores its keys and values in its own slot.
+            - kv_cache.pos moves forward by T once, after the last block. All blocks insert at
+              the same position, so none of them can move it.
+
+        Returns:
+            logits (B, T, vocab_size), and loss: None, a scalar ("mean"), or (B, T) ("none").
+
+        Example (150-token prompt, 16 samples):
+            model(prompt (16,150), kv_cache=cache) -> logits (16,150,V), positions 0..149,   pos 0 -> 150
+            model(token  (16,1),   kv_cache=cache) -> logits (16,1,V),   position 150,       pos 150 -> 151
+
+        Gotcha: start + T may not pass block_size (1024), because wpe has no row for it. Without a
+        cache, generate used to crop instead; with one, generation has to stop there.
+        """
+
+        start = kv_cache.pos if kv_cache is not None else 0
         # idx is of shape (B, T)
         B, T = idx.size()
-        assert T <= self.config.block_size, f"Cannot forward sequence of length {T}, block size is only {self.config.block_size}"
+        assert start + T <= self.config.block_size, f"Cannot forward to position {start + T}, block size is only {self.config.block_size}"
         # forward the token and posisition embeddings
-        pos = torch.arange(0, T, dtype=torch.long, device=idx.device) # shape (T)
+        pos = torch.arange(start, start + T, dtype=torch.long, device=idx.device) # shape (T)
         pos_emb = self.transformer.wpe(pos) # position embeddings of shape (T, n_embd)
         tok_emb = self.transformer.wte(idx) # token embeddings of shape (B, T, n_embd)
         x = tok_emb + pos_emb
         # forward the blocks of the transformer
-        for block in self.transformer.h:
-            x = block(x)
+        for i, block in enumerate(self.transformer.h):
+            x = block(x, kv_cache=kv_cache, layer_idx=i)
+
+        if kv_cache is not None:
+            kv_cache.pos += T
+
         # forward the final layernorm and the classifier
         x = self.transformer.ln_f(x)
         logits = self.lm_head(x) # (B, T, vocab_size)

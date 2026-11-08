@@ -447,5 +447,42 @@ if __name__ == "__main__":
     # The cache now holds keys for all 6 positions, and nothing after them
     assert cache.k[0][:, :, :6].abs().sum() > 0 and cache.k[0][:, :, 6:].abs().sum() == 0
 
+    
+    # --- GPT with a KV cache ---
+    from gpt.model import GPT
+
+    torch.manual_seed(0)
+    config = GPTConfig(block_size=16, vocab_size=64, n_layer=2, n_head=2, n_embd=8)
+    model = GPT(config).eval()
+    idx = torch.randint(0, 64, (3, 10))
+    full, _ = model(idx)    # no cache: all 10 tokens at once
+
+    # Prefill 6 tokens: same logits as the no-cache run, and pos moves once (not once per layer)
+    cache = KVCache(num_layers=2, max_len=16)
+    logits, _ = model(idx[:, :6], kv_cache=cache)
+    assert torch.allclose(logits, full[:, :6], atol=1e-5) and cache.pos == 6, cache.pos
+
+    # Then one token at a time. This only matches if positions continue from 6, not restart at 0
+    for t in range(6, 10):
+        logits, _ = model(idx[:, t:t + 1], kv_cache=cache)
+        assert logits.shape == (3, 1, 64) and torch.allclose(logits, full[:, t:t + 1], atol=1e-5), t
+    assert cache.pos == 10
+
+    # Every layer used its own slot
+    assert all(cache.k[i] is not None for i in range(2)) and not torch.equal(cache.k[0], cache.k[1])
+
+    # Past block_size is refused, even if the cache has room: there is no position embedding for it
+    big = KVCache(num_layers=2, max_len=32)
+    model(torch.zeros(1, 16, dtype=torch.long), kv_cache=big)
+    try:
+        model(torch.zeros(1, 1, dtype=torch.long), kv_cache=big)
+        raise RuntimeError("should have failed")
+    except AssertionError:
+        pass
+
+    # Without a cache, the loss still works as before
+    _, loss = model(idx, targets=idx)
+    assert loss.dim() == 0
+
 
     print("all tests passed")
