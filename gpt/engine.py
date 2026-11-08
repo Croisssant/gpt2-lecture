@@ -103,16 +103,20 @@ def generate(model, prompt_ids, num_samples=1, max_new_tokens=256, temperature=1
     and evaluate_gsm8k.
 
     Args:
-        model: the uncompiled model; the sequence grows by one token every step.
-        prompt_ids: a list of ints, usually ending with <|assistant_start|>.
+        model: the uncompiled model (input shapes change between prefill and the later steps).
+        prompt_ids: a list of ints, usually ending with <|assistant_start|>. Only the last
+            block_size (1024) are kept.
         num_samples: how many independent replies (rows) to generate together in one batch.
         max_new_tokens: the most tokens per reply; rows still running are cut off here.
         temperature, top_k: passed to sample_next_token.
         seed: for the sampling generator, so the same seed gives the same replies.
 
+    Setup: a KVCache with room for the prompt plus max_new_tokens, capped at block_size.
+
     Each step:
-        1. Run the model on all rows, cropped to the last block_size (1024) tokens. There is no
-           KV cache, so the whole sequence is recomputed each time.
+        1. Run the model with the cache. The first step feeds the whole prompt (prefill); every
+           later step feeds only the previous step's tokens, one per row, because the cache
+           already holds the keys and values of everything before them.
         2. Sample one token per row, then choose each row's actual token:
            - row finished: <|assistant_end|> as padding                        -> mask 0
            - calculator result waiting: the next forced token, sample ignored -> mask 0
@@ -124,7 +128,8 @@ def generate(model, prompt_ids, num_samples=1, max_new_tokens=256, temperature=1
              <|output_start|> result <|output_end|> to be forced in over the next steps
              (nothing is queued if it returns None).
            - any other token while collecting: add it to the expression.
-        4. Yield, then stop if every row is done; otherwise append the tokens and continue.
+        4. Yield, then stop if every row is done or the cache is full; otherwise the tokens
+           just chosen become the next step's input.
 
     Yields:
         (tokens, masks): two lists of num_samples ints, this step's token for each row and whether
@@ -135,16 +140,27 @@ def generate(model, prompt_ids, num_samples=1, max_new_tokens=256, temperature=1
         sampled  <|python_start|> 48 / 3 <|python_end|>       mask 1 1 1 1 1
         forced   <|output_start|> 16 <|output_end|>           mask 0 0 0
         sampled  " #### 16" <|assistant_end|>                 mask 1 ... 1, then the row is done
+
+    Gotcha: unlike the old version without a cache, this can't slide past block_size. Once prompt
+    plus reply reaches 1024 tokens, generation stops, so a 1020-token prompt gets at most 5 tokens.
+    Keep prompts short (chat_cli should drop old turns).
     """
     device = next(model.parameters()).device
     rng = torch.Generator(device=device).manual_seed(seed)
+
+    # KV Cache Setup
+    block_size = model.config.block_size
+    prompt_ids = prompt_ids[-block_size:]
+    cache = KVCache(model.config.n_layer, max_len=min(len(prompt_ids) + max_new_tokens, block_size))
+
     x = torch.tensor([prompt_ids] * num_samples, dtype=torch.long, device=device)
     forced = [[] for _ in range(num_samples)]   # tokens waiting to be injected, per row
     python_buf = [None] * num_samples           # None = not inside a calculator call
     done = [False] * num_samples                # has this row finished?
 
+    # Sampling Loop
     for _ in range(max_new_tokens):
-        logits, _ = model(x[:, -model.config.block_size:])
+        logits, _ = model(x, kv_cache=cache)
         sampled = sample_next_token(logits[:, -1, :], rng, temperature, top_k).view(-1).tolist()
 
         tokens, masks = [], []
@@ -185,12 +201,12 @@ def generate(model, prompt_ids, num_samples=1, max_new_tokens=256, temperature=1
 
         yield tokens, masks
 
-        # Stop once every row has finished
-        if all(done):
+        # Stop once every row has finished, or the cache is full (there is no position past block_size)
+        if all(done) or cache.pos == cache.max_len:
             break
 
-        # Add this step's tokens as a new column, so the next forward pass sees them
-        x = torch.cat([x, torch.tensor(tokens, device=device).view(-1, 1)], dim=1)
+        # The next step only feeds this step's tokens; the cache holds everything before them
+        x = torch.tensor(tokens, device=device).view(-1, 1)
 
 
 class KVCache:
@@ -308,11 +324,13 @@ if __name__ == "__main__":
         def __init__(self, scripts, block_size=1024):
             super().__init__()
             self.dummy = torch.nn.Parameter(torch.zeros(1))  # so generate can find the device
-            self.config = SimpleNamespace(block_size=block_size)
+            self.config = SimpleNamespace(block_size=block_size, n_layer=1)
             self.scripts, self.calls = scripts, 0
 
-        def forward(self, x):
-            assert x.size(1) <= self.config.block_size, "generate must crop to block_size"
+        def forward(self, x, kv_cache=None):
+            assert kv_cache.pos + x.size(1) <= self.config.block_size, "generate must stop at block_size"
+            assert kv_cache.pos == 0 or x.size(1) == 1, "after the prompt, one token per step"
+            kv_cache.pos += x.size(1)   # what GPT.forward does
             logits = torch.full((x.size(0), x.size(1), 50304), -1e9)
             for i, script in enumerate(self.scripts):
                 logits[i, -1, script[min(self.calls, len(script) - 1)]] = 0.0
@@ -357,9 +375,14 @@ if __name__ == "__main__":
     assert tokens[0] == short + [ASSISTANT_END] * n and masks[0] == [1] * len(short) + [0] * n
     assert tokens[1] == hello and masks[1] == [1] * len(hello)
 
-    # 6. A prompt longer than block_size is cropped instead of crashing
+    # 6. A prompt longer than block_size is cropped instead of crashing. It fills the cache,
+    #    so there's room to sample exactly one token
     tokens, _ = run([hello], prompt=[bos] * 2000)
-    assert tokens[0] == hello
+    assert tokens[0] == hello[:1]
+
+    # 6b. Generation stops when the sequence reaches block_size: a 1020-token prompt gets 5 tokens
+    tokens, _ = run([[FILLER]], prompt=[bos] * 1020, max_new_tokens=256)
+    assert len(tokens[0]) == 5, len(tokens[0])
 
     # 7. BOS also stops generation
     tokens, _ = run([[FILLER, bos, FILLER]])
@@ -484,5 +507,20 @@ if __name__ == "__main__":
     _, loss = model(idx, targets=idx)
     assert loss.dim() == 0
 
+    # --- generate with a real model ---
+    # Every token the model chose (mask 1) is what a full no-cache forward pass over the
+    # sequence so far would pick, so the cache changes nothing
+    torch.manual_seed(0)
+    tiny = GPT(GPTConfig(block_size=64, vocab_size=50304, n_layer=2, n_head=2, n_embd=16)).eval()
+    prompt = enc.encode_ordinary("What is 2+2?")
+    steps = list(generate(tiny, prompt, num_samples=2, max_new_tokens=20, temperature=0.0))
+    assert len(steps) == 20
+    for row in range(2):
+        seq = list(prompt)
+        for tokens, masks in steps:
+            if masks[row] == 1:
+                logits, _ = tiny(torch.tensor([seq]))
+                assert tokens[row] == logits[0, -1].argmax().item()
+            seq.append(tokens[row])
 
     print("all tests passed")
