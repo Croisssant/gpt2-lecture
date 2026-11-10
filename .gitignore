@@ -24,3 +24,6 @@ hellaswag/
 .vscode/
 Thumbs.db
 desktop.ini
+
+# Model upload on Git Releases
+release/
